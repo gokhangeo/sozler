@@ -84,10 +84,6 @@
                     <i class="fas fa-search text-slate-400 mr-3"></i>
                     <input type="text" id="search-input" onkeyup="filterQuotes()" placeholder="Söz veya yazar ara..." class="w-full bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400">
                 </div>
-
-                <button onclick="exportData()" class="hidden md:flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200">
-                    <i class="fas fa-download"></i> Yedeği Al
-                </button>
             </header>
             
             <!-- Kategori Butonları -->
@@ -96,33 +92,16 @@
             </div>
         </div>
 
-        <!-- Sözler Izgarası (Masonry) -->
-        <div class="masonry-grid" id="quotes-feed">
-            <!-- Dinamik Sözler Buraya Gelecek -->
-        </div>
-
-        <!-- Boş Durum -->
-        <div id="empty-state" class="hidden text-center py-20">
-            <i class="fas fa-ghost text-5xl text-slate-300 mb-4"></i>
-            <p class="text-slate-500">Aradığınız kriterde söz bulunamadı.</p>
-        </div>
-    </div>
-
-    <!-- Yönetim Paneli Modalı -->
-    <div id="admin-modal" class="fixed inset-0 bg-slate-900/40 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="flex justify-between items-center p-6 border-b">
-                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    <i class="fas fa-wand-magic-sparkles text-indigo-500"></i> Yönetim Paneli
-                </h2>
-                <button onclick="closeAdmin()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-red-100 hover:text-red-500 flex items-center justify-center transition">
-                    <i class="fas fa-times"></i>
-                </button>
+        <!-- Yönetim Paneli (Sadece Şifre Girildiğinde Görünür) -->
+        <div id="admin-dashboard" class="hidden mb-8 mt-4 bg-white p-6 rounded-3xl shadow-sm border border-indigo-100">
+            <div class="flex items-center gap-2 mb-6 border-b pb-4">
+                <i class="fas fa-shield-halved text-indigo-500 text-xl"></i>
+                <h2 class="text-lg font-bold text-slate-800">Yönetim Merkezi</h2>
             </div>
-
-            <div class="p-6 overflow-y-auto custom-scrollbar">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Tekli Söz Ekleme -->
-                <div class="bg-slate-50 p-5 rounded-2xl mb-6 border border-slate-100">
+                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
                     <h3 class="text-sm font-bold text-slate-700 mb-3"><i class="fas fa-plus-circle text-emerald-500 mr-2"></i>Tek Bir Söz Ekle</h3>
                     <textarea id="single-quote-text" rows="2" class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-400 outline-none resize-none mb-3 text-sm" placeholder="Söz metnini girin..."></textarea>
                     <div class="flex gap-2 mb-3">
@@ -135,27 +114,36 @@
                 </div>
 
                 <!-- Toplu Söz Ekleme -->
-                <div class="bg-indigo-50/50 p-5 rounded-2xl mb-6 border border-indigo-100">
+                <div class="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
                     <h3 class="text-sm font-bold text-slate-700 mb-2"><i class="fas fa-bolt text-indigo-500 mr-2"></i>Akıllı Toplu Ekleme</h3>
-                    <p class="text-xs text-slate-500 mb-3">Sözleri alt alta yapıştırın. Sistem kategorileri otomatik bulacaktır.</p>
-                    <textarea id="bulk-quotes" rows="5" class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-400 outline-none resize-none mb-3 text-sm bg-white" placeholder="Buraya yapıştırın..."></textarea>
+                    <p class="text-xs text-slate-500 mb-3">Sözleri alt alta yapıştırın. Kategoriler otomatik bulunur.</p>
+                    <textarea id="bulk-quotes" rows="4" class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-400 outline-none resize-none mb-3 text-sm bg-white" placeholder="Buraya yapıştırın..."></textarea>
                     <button onclick="saveBulkQuotesSmart()" class="w-full bg-slate-800 text-white p-3 rounded-xl font-medium hover:bg-slate-900 transition shadow-sm">
                         Analiz Et ve Kaydet
                     </button>
                 </div>
-                
-                <!-- Dışa Aktar Butonu (Mobil için) -->
-                <button onclick="exportData()" class="md:hidden w-full bg-white border border-slate-200 text-slate-700 p-3 rounded-xl font-medium hover:bg-slate-50 transition flex justify-center items-center gap-2 mb-6">
-                    <i class="fas fa-download text-slate-400"></i> Tümünü Cihaza İndir
-                </button>
-
-                <!-- Tehlikeli Alan -->
-                <div class="border-t border-red-100 pt-6 mt-2">
-                    <button onclick="deleteAllQuotes()" class="w-full bg-red-50 text-red-600 border border-red-200 p-3 rounded-xl font-bold hover:bg-red-600 hover:text-white transition flex justify-center items-center gap-2">
-                        <i class="fas fa-triangle-exclamation"></i> Kütüphanedeki Bütün Sözleri Sil
-                    </button>
-                </div>
             </div>
+
+            <!-- Araçlar (Silme ve Dışa Aktarma) -->
+            <div class="flex flex-col sm:flex-row gap-4 mt-6 pt-6 border-t border-slate-100">
+                <button onclick="exportData()" class="flex-1 bg-white border border-slate-200 text-slate-700 p-3 rounded-xl font-medium hover:bg-slate-50 transition flex justify-center items-center gap-2">
+                    <i class="fas fa-download text-slate-400"></i> Tümünü Cihaza İndir (Yedek)
+                </button>
+                <button onclick="deleteAllQuotes()" class="flex-1 bg-red-50 text-red-600 border border-red-200 p-3 rounded-xl font-bold hover:bg-red-600 hover:text-white transition flex justify-center items-center gap-2">
+                    <i class="fas fa-triangle-exclamation"></i> Kütüphanedeki Bütün Sözleri Sil
+                </button>
+            </div>
+        </div>
+
+        <!-- Sözler Izgarası (Masonry) -->
+        <div class="masonry-grid" id="quotes-feed">
+            <!-- Dinamik Sözler Buraya Gelecek -->
+        </div>
+
+        <!-- Boş Durum -->
+        <div id="empty-state" class="hidden text-center py-20">
+            <i class="fas fa-ghost text-5xl text-slate-300 mb-4"></i>
+            <p class="text-slate-500">Aradığınız kriterde söz bulunamadı.</p>
         </div>
     </div>
 
@@ -407,19 +395,26 @@
 
             if (headerClickCount === 5) {
                 headerClickCount = 0;
+                
+                // Zaten giriş yapılmışsa paneli kapat
+                if (isAdminLoggedIn) {
+                    isAdminLoggedIn = false;
+                    document.getElementById('admin-dashboard').classList.add('hidden');
+                    renderFeed();
+                    return;
+                }
+
                 showUIModal('prompt', 'Güvenlik', 'Yönetim şifresi:', (val) => {
                     if(val === '22035034') {
                         isAdminLoggedIn = true;
+                        document.getElementById('admin-dashboard').classList.remove('hidden');
                         renderFeed();
-                        document.getElementById('admin-modal').classList.remove('hidden');
                     } else {
                         showUIModal('alert', 'Hata', 'Şifre yanlış.');
                     }
                 });
             }
         };
-
-        window.closeAdmin = () => document.getElementById('admin-modal').classList.add('hidden');
 
         // Tekli Söz Ekleme
         window.saveSingleQuote = async () => {
@@ -481,7 +476,6 @@
                 return;
             }
 
-            document.getElementById('admin-modal').classList.add('hidden');
             document.getElementById('loading-screen').classList.remove('hidden');
             document.getElementById('loading-screen').querySelector('p').innerText = 'Sözler analiz edilip kaydediliyor...';
 
@@ -525,7 +519,6 @@
             showUIModal('confirm', 'TÜMÜNÜ SİL', 'DİKKAT! Kütüphanedeki BÜTÜN sözler kalıcı olarak silinecek. Geri alınamaz. Onaylıyor musunuz?', async () => {
                 if(!currentUser) return;
                 
-                document.getElementById('admin-modal').classList.add('hidden');
                 document.getElementById('loading-screen').classList.remove('hidden');
                 document.getElementById('loading-screen').querySelector('p').innerText = 'Sözler siliniyor...';
 
