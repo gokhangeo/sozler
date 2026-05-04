@@ -12,23 +12,19 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
         
-        /* Pinterest Tarzı Izgara Sistemi */
+        /* Modern Mobil Uyumlu Masonry */
         .masonry-grid {
             column-count: 1;
-            column-gap: 1.5rem;
+            column-gap: 1rem;
         }
-        @media (min-width: 640px) { .masonry-grid { column-count: 2; } }
-        @media (min-width: 1024px) { .masonry-grid { column-count: 3; } }
+        @media (min-width: 640px) { .masonry-grid { column-count: 2; column-gap: 1.5rem; } }
+        @media (min-width: 1024px) { .masonry-grid { column-count: 3; column-gap: 1.5rem; } }
         
         .masonry-item {
             break-inside: avoid;
-            margin-bottom: 1.5rem;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-bottom: 1rem;
         }
-        .masonry-item:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1);
-        }
+        @media (min-width: 640px) { .masonry-item { margin-bottom: 1.5rem; } }
 
         /* Zarif Kart Tasarımı */
         .quote-card {
@@ -40,19 +36,31 @@
             overflow: hidden;
         }
 
-        /* Araç Kutusu (Sadece üzerine gelince çıkar) */
-        .card-actions {
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.3s ease;
-        }
-        .quote-card:hover .card-actions {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
         /* Arama Çubuğu */
         .search-bar:focus-within { box-shadow: 0 0 0 2px #6366f1; }
+        
+        /* Yapışkan (Sticky) Üst Menü Arka Planı */
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            background: rgba(248, 250, 252, 0.85);
+            backdrop-filter: blur(12px);
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            margin-left: -1rem;
+            margin-right: -1rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+        @media (min-width: 640px) {
+            .sticky-header { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; }
+        }
+        
+        /* Custom Scrollbar for Modal */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
 <body class="antialiased pb-20 selection:bg-indigo-100 selection:text-indigo-900">
@@ -63,27 +71,29 @@
         <p class="text-slate-500 font-medium">Sözler Hazırlanıyor...</p>
     </div>
 
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 hidden" id="app-container">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 hidden" id="app-container">
         
         <!-- Üst Menü & Arama -->
-        <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-            <h1 onclick="handleHeaderClick()" class="cursor-pointer text-2xl font-bold text-slate-800 select-none hover:text-indigo-600 transition flex items-center gap-2">
-                <i class="fas fa-layer-group text-indigo-500"></i> Kütüphane
-            </h1>
+        <div class="sticky-header">
+            <header class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <h1 onclick="handleHeaderClick()" class="cursor-pointer text-2xl font-bold text-slate-800 select-none hover:text-indigo-600 transition flex items-center gap-2">
+                    <i class="fas fa-layer-group text-indigo-500"></i> Kütüphane
+                </h1>
+                
+                <div class="w-full md:w-96 flex items-center bg-white rounded-2xl px-4 py-3 shadow-sm border border-slate-200 search-bar transition">
+                    <i class="fas fa-search text-slate-400 mr-3"></i>
+                    <input type="text" id="search-input" onkeyup="filterQuotes()" placeholder="Söz veya yazar ara..." class="w-full bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400">
+                </div>
+
+                <button onclick="exportData()" class="hidden md:flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200">
+                    <i class="fas fa-download"></i> Yedeği Al
+                </button>
+            </header>
             
-            <div class="w-full md:w-96 flex items-center bg-white rounded-2xl px-4 py-3 shadow-sm border border-slate-200 search-bar transition">
-                <i class="fas fa-search text-slate-400 mr-3"></i>
-                <input type="text" id="search-input" onkeyup="filterQuotes()" placeholder="Söz veya yazar ara..." class="w-full bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400">
+            <!-- Kategori Butonları -->
+            <div class="flex gap-2 overflow-x-auto pb-2 mt-4 scrollbar-hide" id="category-filters">
+                <!-- Dinamik doldurulacak -->
             </div>
-
-            <button onclick="exportData()" class="hidden md:flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200">
-                <i class="fas fa-download"></i> Yedeği Al
-            </button>
-        </header>
-
-        <!-- Kategori Butonları -->
-        <div class="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide" id="category-filters">
-            <!-- Dinamik doldurulacak -->
         </div>
 
         <!-- Sözler Izgarası (Masonry) -->
@@ -100,27 +110,52 @@
 
     <!-- Yönetim Paneli Modalı -->
     <div id="admin-modal" class="fixed inset-0 bg-slate-900/40 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl w-full max-w-xl p-6 md:p-8 shadow-2xl overflow-hidden flex flex-col">
-            <div class="flex justify-between items-center mb-6 border-b pb-4">
+        <div class="bg-white rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center p-6 border-b">
                 <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    <i class="fas fa-wand-magic-sparkles text-indigo-500"></i> Akıllı Yönetim
+                    <i class="fas fa-wand-magic-sparkles text-indigo-500"></i> Yönetim Paneli
                 </h2>
                 <button onclick="closeAdmin()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-red-100 hover:text-red-500 flex items-center justify-center transition">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
 
-            <div class="bg-indigo-50/50 p-5 rounded-2xl mb-4 border border-indigo-100">
-                <p class="text-sm text-slate-600 mb-3 leading-relaxed">Toplu sözlerinizi buraya yapıştırın. Yapay zeka mantığı konuları (Aşk, Motivasyon vb.) otomatik belirleyip içeri aktaracaktır. İsterseniz sözlerin başına # koyabilirsiniz.</p>
-                <textarea id="bulk-quotes" rows="8" class="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-400 outline-none resize-none mb-4 text-sm bg-white shadow-sm" placeholder="Buraya yapıştırın..."></textarea>
-                <button onclick="saveBulkQuotesSmart()" class="w-full bg-slate-800 text-white p-3.5 rounded-xl font-medium hover:bg-slate-900 transition shadow-lg shadow-slate-200 flex justify-center items-center gap-2">
-                    <i class="fas fa-bolt text-yellow-400"></i> Analiz Et ve Kaydet
+            <div class="p-6 overflow-y-auto custom-scrollbar">
+                <!-- Tekli Söz Ekleme -->
+                <div class="bg-slate-50 p-5 rounded-2xl mb-6 border border-slate-100">
+                    <h3 class="text-sm font-bold text-slate-700 mb-3"><i class="fas fa-plus-circle text-emerald-500 mr-2"></i>Tek Bir Söz Ekle</h3>
+                    <textarea id="single-quote-text" rows="2" class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-400 outline-none resize-none mb-3 text-sm" placeholder="Söz metnini girin..."></textarea>
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="single-quote-author" class="flex-1 p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-400 outline-none text-sm" placeholder="Yazar (İsteğe bağlı)">
+                        <input type="text" id="single-quote-category" class="flex-1 p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-400 outline-none text-sm" placeholder="Kategori (İsteğe bağlı)">
+                    </div>
+                    <button onclick="saveSingleQuote()" class="w-full bg-emerald-500 text-white p-3 rounded-xl font-medium hover:bg-emerald-600 transition shadow-sm">
+                        Kütüphaneye Ekle
+                    </button>
+                </div>
+
+                <!-- Toplu Söz Ekleme -->
+                <div class="bg-indigo-50/50 p-5 rounded-2xl mb-6 border border-indigo-100">
+                    <h3 class="text-sm font-bold text-slate-700 mb-2"><i class="fas fa-bolt text-indigo-500 mr-2"></i>Akıllı Toplu Ekleme</h3>
+                    <p class="text-xs text-slate-500 mb-3">Sözleri alt alta yapıştırın. Sistem kategorileri otomatik bulacaktır.</p>
+                    <textarea id="bulk-quotes" rows="5" class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-400 outline-none resize-none mb-3 text-sm bg-white" placeholder="Buraya yapıştırın..."></textarea>
+                    <button onclick="saveBulkQuotesSmart()" class="w-full bg-slate-800 text-white p-3 rounded-xl font-medium hover:bg-slate-900 transition shadow-sm">
+                        Analiz Et ve Kaydet
+                    </button>
+                </div>
+                
+                <!-- Dışa Aktar Butonu (Mobil için) -->
+                <button onclick="exportData()" class="md:hidden w-full bg-white border border-slate-200 text-slate-700 p-3 rounded-xl font-medium hover:bg-slate-50 transition flex justify-center items-center gap-2 mb-6">
+                    <i class="fas fa-download text-slate-400"></i> Tümünü Cihaza İndir
                 </button>
+
+                <!-- Tehlikeli Alan -->
+                <div class="border-t border-red-100 pt-6 mt-2">
+                    <button onclick="deleteAllQuotes()" class="w-full bg-red-50 text-red-600 border border-red-200 p-3 rounded-xl font-bold hover:bg-red-600 hover:text-white transition flex justify-center items-center gap-2">
+                        <i class="fas fa-triangle-exclamation"></i> Kütüphanedeki Bütün Sözleri Sil
+                    </button>
+                </div>
             </div>
-            
-            <button onclick="exportData()" class="md:hidden w-full bg-white border border-slate-200 text-slate-700 p-3 rounded-xl font-medium hover:bg-slate-50 transition flex justify-center items-center gap-2">
-                <i class="fas fa-download text-slate-400"></i> Tümünü Dışa Aktar
-            </button>
         </div>
     </div>
 
@@ -154,7 +189,10 @@
             messagingSenderId: "289783119309",
             appId: "1:289783119309:web:c1ac900ccc610ed1b65884"
         };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'soz-kutuphanesi-app';
+        
+        // ÖNEMLİ DÜZELTME: Verilerin kaydedileceği yeri rastgele atamalardan korumak için sabit bir klasör adı belirledik.
+        // Bu sayede sayfa yenilense de veriler aynı yerde kalır.
+        const appId = 'sabit-soz-kutuphanesi'; 
         
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -300,6 +338,9 @@
                             <p class="text-slate-400 text-sm font-medium">— ${q.author || 'Anonim'}</p>
                             
                             <div class="flex gap-1.5 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="shareQuote(decodeURIComponent('${encodeURIComponent(q.text)}'), decodeURIComponent('${encodeURIComponent(q.author || 'Anonim')}'))" class="w-9 h-9 rounded-full bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 flex items-center justify-center transition" title="Paylaş">
+                                    <i class="fas fa-share-nodes text-sm"></i>
+                                </button>
                                 <button onclick="copyToClipboard(decodeURIComponent('${encodeURIComponent(q.text)}'))" class="w-9 h-9 rounded-full bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 flex items-center justify-center transition" title="Kopyala">
                                     <i class="fas fa-copy text-sm"></i>
                                 </button>
@@ -317,6 +358,24 @@
             `).join('');
         };
 
+        // Söz Paylaşma Fonksiyonu (Mobil Uyumlu)
+        window.shareQuote = async (text, author) => {
+            const shareData = {
+                title: 'Söz Kütüphanesi',
+                text: `"${text}"\n— ${author}`
+            };
+            
+            try {
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                } else {
+                    copyToClipboard(text);
+                }
+            } catch (err) {
+                console.log('Paylaşım iptal edildi veya desteklenmiyor.');
+            }
+        };
+
         // Söz Kopyalama Fonksiyonu
         window.copyToClipboard = (text) => {
             const tempInput = document.createElement("textarea");
@@ -326,7 +385,7 @@
             document.execCommand("copy");
             document.body.removeChild(tempInput);
             
-            showUIModal('alert', 'Başarılı', 'Söz başarıyla kopyalandı!');
+            showUIModal('alert', 'Başarılı', 'Söz panoya kopyalandı!');
         };
 
         // Otomatik Kategori Bulucu
@@ -361,6 +420,49 @@
         };
 
         window.closeAdmin = () => document.getElementById('admin-modal').classList.add('hidden');
+
+        // Tekli Söz Ekleme
+        window.saveSingleQuote = async () => {
+            if(!currentUser) return;
+            const text = document.getElementById('single-quote-text').value.trim();
+            const author = document.getElementById('single-quote-author').value.trim();
+            const category = document.getElementById('single-quote-category').value.trim();
+
+            if(!text) return showUIModal('alert', 'Uyarı', 'Lütfen bir söz girin.');
+
+            document.getElementById('loading-screen').classList.remove('hidden');
+            document.getElementById('loading-screen').querySelector('p').innerText = 'Ekleniyor...';
+
+            try {
+                const quotesRef = collection(db, 'artifacts', appId, 'public', 'data', 'quotes');
+                await addDoc(quotesRef, {
+                    text: text,
+                    author: author || 'Anonim',
+                    category: category || autoCategorize(text),
+                    createdAt: Date.now(),
+                    addedBy: currentUser.uid
+                });
+                
+                document.getElementById('single-quote-text').value = '';
+                document.getElementById('single-quote-author').value = '';
+                document.getElementById('single-quote-category').value = '';
+                
+                document.getElementById('loading-screen').classList.add('hidden');
+                showUIModal('alert', 'Başarılı', 'Söz kütüphaneye eklendi.');
+            } catch (err) {
+                document.getElementById('loading-screen').classList.add('hidden');
+                showUIModal('alert', 'Hata', 'Kayıt başarısız oldu.');
+            }
+        };
+
+        // Kutuya metin yapıştırıldığında otomatik kaydetme
+        document.getElementById('bulk-quotes').addEventListener('paste', () => {
+            setTimeout(() => {
+                if (document.getElementById('bulk-quotes').value.trim() !== '') {
+                    window.saveBulkQuotesSmart();
+                }
+            }, 300);
+        });
 
         // Yapay Zeka Destekli Toplu Kayıt
         window.saveBulkQuotesSmart = async () => {
@@ -408,11 +510,35 @@
             }
         };
 
-        // Söz Silme
+        // Tekli Söz Silme
         window.deleteQuote = (id) => {
             showUIModal('confirm', 'Sözü Sil', 'Bu sözü kalıcı olarak silmek istiyor musunuz?', async () => {
                 if(!currentUser) return;
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'quotes', id));
+            });
+        };
+
+        // Toplu Söz Silme
+        window.deleteAllQuotes = () => {
+            if(allQuotes.length === 0) return showUIModal('alert', 'Bilgi', 'Silinecek söz bulunmuyor.');
+            
+            showUIModal('confirm', 'TÜMÜNÜ SİL', 'DİKKAT! Kütüphanedeki BÜTÜN sözler kalıcı olarak silinecek. Geri alınamaz. Onaylıyor musunuz?', async () => {
+                if(!currentUser) return;
+                
+                document.getElementById('admin-modal').classList.add('hidden');
+                document.getElementById('loading-screen').classList.remove('hidden');
+                document.getElementById('loading-screen').querySelector('p').innerText = 'Sözler siliniyor...';
+
+                try {
+                    const promises = allQuotes.map(q => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'quotes', q.id)));
+                    await Promise.all(promises);
+                    
+                    document.getElementById('loading-screen').classList.add('hidden');
+                    showUIModal('alert', 'Başarılı', 'Bütün sözler başarıyla silindi.');
+                } catch(e) {
+                    document.getElementById('loading-screen').classList.add('hidden');
+                    showUIModal('alert', 'Hata', 'Silme işlemi sırasında bir hata oluştu.');
+                }
             });
         };
 
@@ -432,15 +558,15 @@
         // Resim Olarak İndir
         window.downloadImage = (id) => {
             const card = document.getElementById(`card-${id}`).querySelector('.quote-card');
-            const actions = card.querySelector('.card-actions');
-            actions.style.opacity = '0'; // İndirirken ikonlar görünmesin
+            const actions = card.querySelector('.flex.gap-1\\.5'); // İkon kutusu sınıfı
+            if(actions) actions.style.opacity = '0'; // İndirirken ikonlar görünmesin
             
             html2canvas(card, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
                 const link = document.createElement('a');
                 link.download = `soz.png`;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
-                actions.style.opacity = ''; 
+                if(actions) actions.style.opacity = ''; 
             });
         };
 
