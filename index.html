@@ -2,171 +2,164 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Söz Kütüphanesi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Söz Kütüphanesi PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
-        
-        /* Modern Mobil Uyumlu Masonry */
-        .masonry-grid {
-            column-count: 1;
-            column-gap: 1rem;
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f8fafc; 
+            color: #0f172a; 
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
+        
+        /* Masonry Grid (Galeri Modu) */
+        .masonry-grid { column-count: 1; column-gap: 1rem; }
         @media (min-width: 640px) { .masonry-grid { column-count: 2; column-gap: 1.5rem; } }
         @media (min-width: 1024px) { .masonry-grid { column-count: 3; column-gap: 1.5rem; } }
-        
-        .masonry-item {
-            break-inside: avoid;
-            margin-bottom: 1rem;
-        }
-        @media (min-width: 640px) { .masonry-item { margin-bottom: 1.5rem; } }
+        .masonry-item { break-inside: avoid; margin-bottom: 1rem; }
 
-        /* Zarif Kart Tasarımı */
-        .quote-card {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 1.5rem;
-            padding: 1.5rem;
-            position: relative;
-            overflow: hidden;
+        /* Akış Modu (Snap Scroll) */
+        .swipe-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            overflow-y: scroll; scroll-snap-type: y mandatory; background: #0f172a; z-index: 100;
+        }
+        .swipe-item {
+            height: 100vh; scroll-snap-align: start;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 2rem; position: relative;
         }
 
-        /* Arama Çubuğu */
-        .search-bar:focus-within { box-shadow: 0 0 0 2px #6366f1; }
+        /* Cam Efekti ve Animasyonlar */
+        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); }
+        .sticky-header { position: sticky; top: 0; z-index: 40; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         
-        /* Yapışkan (Sticky) Üst Menü Arka Planı */
-        .sticky-header {
-            position: sticky;
-            top: 0;
-            z-index: 40;
-            background: rgba(248, 250, 252, 0.85);
-            backdrop-filter: blur(12px);
-            padding-top: 1rem;
-            padding-bottom: 1rem;
-            margin-left: -1rem;
-            margin-right: -1rem;
-            padding-left: 1rem;
-            padding-right: 1rem;
-        }
-        @media (min-width: 640px) {
-            .sticky-header { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; }
-        }
+        .active-btn { background-color: #4f46e5 !important; color: white !important; transform: scale(1.05); }
         
-        /* Custom Scrollbar for Modal */
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+        /* Mobil Buton Dokunmatik Alanları */
+        button { cursor: pointer; min-height: 44px; min-width: 44px; }
     </style>
 </head>
-<body class="antialiased pb-20 selection:bg-indigo-100 selection:text-indigo-900">
+<body class="antialiased pb-24">
 
     <!-- Yükleme Ekranı -->
-    <div id="loading-screen" class="fixed inset-0 bg-slate-50 z-50 flex flex-col items-center justify-center">
-        <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-        <p class="text-slate-500 font-medium">Sözler Hazırlanıyor...</p>
+    <div id="loading-screen" class="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+        <p class="text-slate-400 font-medium animate-pulse">Sözler Hazırlanıyor...</p>
     </div>
 
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 hidden" id="app-container">
+    <!-- Uygulama İçeriği -->
+    <div class="max-w-6xl mx-auto px-4 hidden" id="app-container">
         
-        <!-- Üst Menü & Arama -->
-        <div class="sticky-header">
-            <header class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <h1 onclick="handleHeaderClick()" class="cursor-pointer text-2xl font-bold text-slate-800 select-none hover:text-indigo-600 transition flex items-center gap-2">
+        <div class="sticky-header py-4 bg-[#f8fafc]/80 backdrop-blur-md">
+            <header class="flex justify-between items-center mb-4">
+                <h1 onclick="handleHeaderClick()" class="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2 select-none">
                     <i class="fas fa-layer-group text-indigo-500"></i> Kütüphane
                 </h1>
-                
-                <div class="w-full md:w-96 flex items-center bg-white rounded-2xl px-4 py-3 shadow-sm border border-slate-200 search-bar transition">
-                    <i class="fas fa-search text-slate-400 mr-3"></i>
-                    <input type="text" id="search-input" onkeyup="filterQuotes()" placeholder="Söz veya yazar ara..." class="w-full bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400">
+                <div class="flex gap-2">
+                    <button onclick="switchView('gallery')" id="view-gal-btn" class="p-3 rounded-xl bg-white shadow-sm border border-slate-200 text-slate-500 active-btn">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                    <button onclick="switchView('swipe')" id="view-swp-btn" class="p-3 rounded-xl bg-white shadow-sm border border-slate-200 text-slate-500">
+                        <i class="fas fa-mobile-screen"></i>
+                    </button>
                 </div>
             </header>
             
-            <!-- Kategori Butonları -->
-            <div class="flex gap-2 overflow-x-auto pb-2 mt-4 scrollbar-hide" id="category-filters">
-                <!-- Dinamik doldurulacak -->
+            <div class="flex items-center bg-white rounded-2xl px-4 shadow-sm border border-slate-100 mb-4 focus-within:ring-2 focus-within:ring-indigo-400 transition-all">
+                <i class="fas fa-search text-slate-300 mr-3"></i>
+                <input type="text" id="search-input" onkeyup="filterQuotes()" placeholder="Sözlerde ara..." class="w-full py-3 bg-transparent outline-none text-sm text-slate-700">
+            </div>
+
+            <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" id="category-filters"></div>
+        </div>
+
+        <!-- Günün Sözü Paneli -->
+        <div id="daily-panel" class="mb-8 p-6 rounded-[2rem] bg-gradient-to-br from-indigo-600 to-purple-700 text-white shadow-xl shadow-indigo-200 relative overflow-hidden hidden">
+            <div class="absolute -right-10 -top-10 text-[10rem] opacity-10">
+                <i class="fas fa-quote-right"></i>
+            </div>
+            <div class="relative z-10">
+                <span class="inline-block px-3 py-1 bg-white/20 rounded-full text-[10px] font-bold uppercase tracking-widest mb-4">Günün İlhamı</span>
+                <p id="daily-text" class="text-xl md:text-2xl font-light italic leading-relaxed mb-6">"..."</p>
+                <div class="flex justify-between items-center">
+                    <p id="daily-author" class="font-semibold text-indigo-100">— </p>
+                    <button onclick="shareDaily()" class="p-2 bg-white/10 rounded-full hover:bg-white/20 transition">
+                        <i class="fas fa-share-alt"></i>
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Yönetim Paneli (Sadece Şifre Girildiğinde Görünür) -->
-        <div id="admin-dashboard" class="hidden mb-8 mt-4 bg-white p-6 rounded-3xl shadow-sm border border-indigo-100">
-            <div class="flex items-center gap-2 mb-6 border-b pb-4">
-                <i class="fas fa-shield-halved text-indigo-500 text-xl"></i>
-                <h2 class="text-lg font-bold text-slate-800">Yönetim Merkezi</h2>
+        <!-- Admin Paneli -->
+        <div id="admin-dashboard" class="hidden mb-8 p-6 bg-white rounded-[2rem] shadow-xl border-2 border-indigo-50">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-bold text-slate-800"><i class="fas fa-user-shield text-indigo-500 mr-2"></i>Yönetim Paneli</h2>
+                <button onclick="logoutAdmin()" class="text-xs font-bold text-red-400">Panel Kapat</button>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Tekli Söz Ekleme -->
-                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                    <h3 class="text-sm font-bold text-slate-700 mb-3"><i class="fas fa-plus-circle text-emerald-500 mr-2"></i>Tek Bir Söz Ekle</h3>
-                    <textarea id="single-quote-text" rows="2" class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-400 outline-none resize-none mb-3 text-sm" placeholder="Söz metnini girin..."></textarea>
-                    <div class="flex gap-2 mb-3">
-                        <input type="text" id="single-quote-author" class="flex-1 p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-400 outline-none text-sm" placeholder="Yazar (İsteğe bağlı)">
-                        <input type="text" id="single-quote-category" class="flex-1 p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-400 outline-none text-sm" placeholder="Kategori (İsteğe bağlı)">
+                <div class="space-y-4">
+                    <div id="edit-title" class="text-sm font-bold text-slate-600">Yeni Söz Ekle</div>
+                    <input type="hidden" id="edit-id">
+                    <textarea id="quote-text" rows="3" class="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 focus:ring-2 focus:ring-indigo-400 outline-none text-sm" placeholder="Sözü buraya yazın..."></textarea>
+                    <div class="flex gap-2">
+                        <input type="text" id="quote-author" class="flex-1 p-3 rounded-xl border border-slate-100 bg-slate-50 text-sm" placeholder="Yazar">
+                        <input type="text" id="quote-category" class="flex-1 p-3 rounded-xl border border-slate-100 bg-slate-50 text-sm" placeholder="Kategori">
                     </div>
-                    <button onclick="saveSingleQuote()" class="w-full bg-emerald-500 text-white p-3 rounded-xl font-medium hover:bg-emerald-600 transition shadow-sm">
-                        Kütüphaneye Ekle
-                    </button>
+                    <div class="flex gap-2">
+                        <button onclick="saveQuote()" id="save-btn" class="flex-1 bg-indigo-600 text-white p-3 rounded-xl font-bold">Kaydet</button>
+                        <button onclick="resetAdminForm()" class="px-4 bg-slate-100 text-slate-500 rounded-xl"><i class="fas fa-rotate-left"></i></button>
+                    </div>
                 </div>
-
-                <!-- Toplu Söz Ekleme -->
-                <div class="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100">
-                    <h3 class="text-sm font-bold text-slate-700 mb-2"><i class="fas fa-bolt text-indigo-500 mr-2"></i>Akıllı Toplu Ekleme</h3>
-                    <p class="text-xs text-slate-500 mb-3">Sözleri alt alta yapıştırın. Kategoriler otomatik bulunur.</p>
-                    <textarea id="bulk-quotes" rows="4" class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-400 outline-none resize-none mb-3 text-sm bg-white" placeholder="Buraya yapıştırın..."></textarea>
-                    <button onclick="saveBulkQuotesSmart()" class="w-full bg-slate-800 text-white p-3 rounded-xl font-medium hover:bg-slate-900 transition shadow-sm">
-                        Analiz Et ve Kaydet
-                    </button>
+                <div class="space-y-4">
+                    <div class="text-sm font-bold text-slate-600">Toplu & Yedek</div>
+                    <textarea id="bulk-quotes" rows="3" class="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm" placeholder="Sözleri alt alta yapıştırın..."></textarea>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="saveBulk()" class="bg-slate-800 text-white p-3 rounded-xl text-sm font-bold">Toplu Aktar</button>
+                        <button onclick="exportData()" class="bg-white border border-slate-200 p-3 rounded-xl text-sm font-bold">Yedek Al</button>
+                    </div>
+                    <button onclick="deleteAllQuotes()" class="w-full py-2 text-[10px] text-red-300 font-bold hover:text-red-600 transition">TÜMÜNÜ SİL</button>
                 </div>
-            </div>
-
-            <!-- Araçlar (Silme ve Dışa Aktarma) -->
-            <div class="flex flex-col sm:flex-row gap-4 mt-6 pt-6 border-t border-slate-100">
-                <button onclick="exportData()" class="flex-1 bg-white border border-slate-200 text-slate-700 p-3 rounded-xl font-medium hover:bg-slate-50 transition flex justify-center items-center gap-2">
-                    <i class="fas fa-download text-slate-400"></i> Tümünü Cihaza İndir (Yedek)
-                </button>
-                <button onclick="deleteAllQuotes()" class="flex-1 bg-red-50 text-red-600 border border-red-200 p-3 rounded-xl font-bold hover:bg-red-600 hover:text-white transition flex justify-center items-center gap-2">
-                    <i class="fas fa-triangle-exclamation"></i> Kütüphanedeki Bütün Sözleri Sil
-                </button>
             </div>
         </div>
 
-        <!-- Sözler Izgarası (Masonry) -->
-        <div class="masonry-grid" id="quotes-feed">
-            <!-- Dinamik Sözler Buraya Gelecek -->
-        </div>
+        <!-- Ana Akış (Galeri Modu) -->
+        <div class="masonry-grid" id="gallery-feed"></div>
 
-        <!-- Boş Durum -->
+        <!-- Akış Modu (Swipe Container) -->
+        <div id="swipe-feed" class="swipe-container hidden"></div>
+
         <div id="empty-state" class="hidden text-center py-20">
-            <i class="fas fa-ghost text-5xl text-slate-300 mb-4"></i>
-            <p class="text-slate-500">Aradığınız kriterde söz bulunamadı.</p>
+            <i class="fas fa-ghost text-5xl text-slate-200 mb-4"></i>
+            <p class="text-slate-400">Gösterilecek söz bulunamadı.</p>
         </div>
     </div>
 
-    <!-- Özel Uyarı Modalı -->
-    <div id="ui-modal" class="fixed inset-0 bg-slate-900/40 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl transform transition-all border border-slate-100">
+    <!-- Modals -->
+    <div id="ui-modal" class="fixed inset-0 bg-slate-900/40 z-[110] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-[2rem] p-6 w-full max-w-sm shadow-2xl border border-slate-100">
             <h3 id="ui-modal-title" class="text-lg font-bold text-slate-800 mb-2">Başlık</h3>
             <div id="ui-modal-message" class="text-slate-500 text-sm mb-6 leading-relaxed">Mesaj</div>
-            
-            <input type="password" id="ui-modal-input" class="hidden w-full p-3 rounded-xl border border-slate-200 mb-6 text-center tracking-[0.3em] text-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="••••••••">
-            
+            <input type="password" id="ui-modal-input" class="hidden w-full p-4 rounded-2xl border border-slate-200 mb-6 text-center tracking-[0.5em] text-xl outline-none" placeholder="••••">
             <div class="flex gap-2 justify-end">
-                <button id="ui-modal-cancel" class="hidden px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 font-medium transition">İptal</button>
-                <button id="ui-modal-confirm" class="px-5 py-2 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition">Tamam</button>
+                <button id="ui-modal-cancel" class="hidden px-5 py-2.5 rounded-xl text-slate-400 font-bold transition">İptal</button>
+                <button id="ui-modal-confirm" class="px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-bold transition">Tamam</button>
             </div>
         </div>
     </div>
 
-    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCVbPr8GHUqx5nWtVlv_QVep5Or8vvLTGk",
@@ -178,388 +171,235 @@
             appId: "1:289783119309:web:c1ac900ccc610ed1b65884"
         };
         
-        // ÖNEMLİ DÜZELTME: Verilerin kaydedileceği yeri rastgele atamalardan korumak için sabit bir klasör adı belirledik.
-        // Bu sayede sayfa yenilense de veriler aynı yerde kalır.
         const appId = 'sabit-soz-kutuphanesi'; 
-        
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        let currentUser = null;
-        let allQuotes = [];
-        let filteredQuotes = [];
-        let isAdminLoggedIn = false;
-        let headerClickCount = 0;
-        let headerClickTimer = null;
-        let currentCategory = 'Tümü';
+        let currentUser = null, allQuotes = [], filteredQuotes = [], isAdminLoggedIn = false;
+        let headerClickCount = 0, headerClickTimer = null, currentCategory = 'Tümü', currentView = 'gallery';
 
-        // Özel Modal
-        const uiModal = document.getElementById('ui-modal');
         const showUIModal = (type, title, message, onConfirm = null) => {
+            const modal = document.getElementById('ui-modal');
             document.getElementById('ui-modal-title').innerText = title;
             document.getElementById('ui-modal-message').innerHTML = message;
-            
-            const inputEl = document.getElementById('ui-modal-input');
-            const cancelBtn = document.getElementById('ui-modal-cancel');
-            const confirmBtn = document.getElementById('ui-modal-confirm');
-
-            inputEl.classList.add('hidden');
-            inputEl.value = '';
-            cancelBtn.classList.add('hidden');
-            
-            confirmBtn.onclick = () => {
-                uiModal.classList.add('hidden');
-                if(onConfirm) onConfirm(inputEl.value);
-            };
-
-            if(type === 'prompt') {
-                inputEl.classList.remove('hidden');
-                cancelBtn.classList.remove('hidden');
-                setTimeout(() => inputEl.focus(), 100);
-            } else if (type === 'confirm') {
-                cancelBtn.classList.remove('hidden');
-            }
-
-            cancelBtn.onclick = () => uiModal.classList.add('hidden');
-            uiModal.classList.remove('hidden');
+            const input = document.getElementById('ui-modal-input'), cancel = document.getElementById('ui-modal-cancel'), confirm = document.getElementById('ui-modal-confirm');
+            input.classList.add('hidden'); input.value = ''; cancel.classList.add('hidden');
+            confirm.onclick = () => { modal.classList.add('hidden'); if(onConfirm) onConfirm(input.value); };
+            if(type === 'prompt') { input.classList.remove('hidden'); cancel.classList.remove('hidden'); setTimeout(() => input.focus(), 100); }
+            else if (type === 'confirm') { cancel.classList.remove('hidden'); }
+            cancel.onclick = () => modal.classList.add('hidden');
+            modal.classList.remove('hidden');
         };
 
-        // Giriş
         const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    try { await signInWithCustomToken(auth, __initial_auth_token); } 
-                    catch (e) { await signInAnonymously(auth); }
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                document.getElementById('loading-screen').classList.add('hidden');
-                showUIModal('alert', 'Giriş Hatası', `Veritabanı bağlantısı kurulamadı. Firebase'de Anonymous giriş aktif mi kontrol edin.<br><br>Hata: ${error.message}`);
-            }
+            try { await signInAnonymously(auth); } 
+            catch (e) { document.getElementById('loading-screen').innerHTML = `<p class='p-8 text-center text-red-500'>Hata: ${e.message}</p>`; }
         };
 
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            if (user) {
-                loadData();
-            }
-        });
+        onAuthStateChanged(auth, (user) => { if (user) { currentUser = user; loadData(); } });
 
-        // Veri Çekme
         const loadData = () => {
-            if(!currentUser) return;
             const quotesRef = collection(db, 'artifacts', appId, 'public', 'data', 'quotes');
-            
             onSnapshot(quotesRef, (snapshot) => {
-                document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('loading-screen').classList.add('opacity-0');
+                setTimeout(() => document.getElementById('loading-screen').remove(), 500);
                 document.getElementById('app-container').classList.remove('hidden');
-
-                allQuotes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                allQuotes.sort((a,b) => b.createdAt - a.createdAt); 
-                updateCategories();
+                
+                allQuotes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b) => b.createdAt - a.createdAt);
+                
+                setDailyQuote();
+                updateCategories(); 
                 filterQuotes();
-            }, (err) => {
-                console.error(err);
-                document.getElementById('loading-screen').classList.add('hidden');
-                showUIModal('alert', 'Veri Çekme Hatası', `Firebase veritabanı kurallarınız engelliyor olabilir. Lütfen Firebase Console'dan Firestore Rules kısmını 'allow read, write: if true;' olarak güncelleyin.<br><br><b>Detay:</b> ${err.message}`);
             });
         };
 
-        // Kategorileri Çıkar ve Butonları Oluştur
+        const setDailyQuote = () => {
+            if(allQuotes.length === 0) return;
+            const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+            const quote = allQuotes[dayOfYear % allQuotes.length];
+            document.getElementById('daily-text').innerText = `"${quote.text}"`;
+            document.getElementById('daily-author').innerText = `— ${quote.author || 'Anonim'}`;
+            document.getElementById('daily-panel').classList.remove('hidden');
+        };
+
         const updateCategories = () => {
-            const categories = ['Tümü', ...new Set(allQuotes.map(q => q.category).filter(Boolean))];
-            const container = document.getElementById('category-filters');
-            
-            container.innerHTML = categories.map(cat => `
-                <button onclick="setCategory('${cat}')" class="whitespace-nowrap px-4 py-2 rounded-xl text-sm font-medium transition ${currentCategory === cat ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}">
-                    ${cat}
-                </button>
+            const cats = ['Tümü', ...new Set(allQuotes.map(q => q.category).filter(Boolean))];
+            document.getElementById('category-filters').innerHTML = cats.map(cat => `
+                <button onclick="setCategory('${cat}')" class="whitespace-nowrap px-5 py-2.5 rounded-2xl text-xs font-bold transition ${currentCategory === cat ? 'active-btn' : 'bg-white text-slate-500 border border-slate-100'}">${cat}</button>
             `).join('');
         };
 
-        window.setCategory = (cat) => {
-            currentCategory = cat;
-            updateCategories();
-            filterQuotes();
-        };
+        window.setCategory = (cat) => { currentCategory = cat; updateCategories(); filterQuotes(); };
 
-        // Arama ve Filtreleme
         window.filterQuotes = () => {
-            const searchTerm = document.getElementById('search-input').value.toLowerCase();
-            
+            const search = document.getElementById('search-input').value.toLowerCase();
             filteredQuotes = allQuotes.filter(q => {
-                const matchCategory = currentCategory === 'Tümü' || q.category === currentCategory;
-                const matchSearch = q.text.toLowerCase().includes(searchTerm) || (q.author && q.author.toLowerCase().includes(searchTerm));
-                return matchCategory && matchSearch;
+                const matchCat = currentCategory === 'Tümü' || q.category === currentCategory;
+                const matchSearch = q.text.toLowerCase().includes(search) || (q.author && q.author.toLowerCase().includes(search));
+                return matchCat && matchSearch;
             });
-            
-            renderFeed();
+            renderUI();
         };
 
-        // Arayüzü Çiz
-        const renderFeed = () => {
-            const feed = document.getElementById('quotes-feed');
-            const emptyState = document.getElementById('empty-state');
+        const renderUI = () => {
+            const galFeed = document.getElementById('gallery-feed'), swpFeed = document.getElementById('swipe-feed'), empty = document.getElementById('empty-state');
             
-            if (filteredQuotes.length === 0) {
-                feed.innerHTML = '';
-                emptyState.classList.remove('hidden');
-                return;
-            }
-            
-            emptyState.classList.add('hidden');
-            feed.innerHTML = filteredQuotes.map(q => `
+            if (filteredQuotes.length === 0) { galFeed.innerHTML = swpFeed.innerHTML = ''; empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden');
+
+            // Gallery Render
+            galFeed.innerHTML = filteredQuotes.map(q => `
                 <div class="masonry-item" id="card-${q.id}">
-                    <div class="bg-white rounded-[2rem] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-100 relative overflow-hidden group transition-all duration-300 hover:-translate-y-1">
-                        <!-- Transparan İkon Arka Plan -->
-                        <i class="fas fa-quote-right absolute -right-4 -top-4 text-9xl text-slate-50 opacity-80 -z-10 rotate-12"></i>
-                        
-                        <div class="flex justify-between items-start mb-5">
-                            <span class="inline-block px-3 py-1.5 bg-slate-50 text-slate-500 rounded-full text-xs font-semibold tracking-wide">${q.category || 'Genel'}</span>
-                        </div>
-                        
-                        <p class="text-slate-800 text-lg sm:text-xl font-medium leading-snug mb-8">"${q.text}"</p>
-                        
-                        <div class="flex justify-between items-center pt-4 border-t border-slate-50">
-                            <p class="text-slate-400 text-sm font-medium">— ${q.author || 'Anonim'}</p>
-                            
-                            <div class="flex gap-1.5 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onclick="shareQuote(decodeURIComponent('${encodeURIComponent(q.text)}'), decodeURIComponent('${encodeURIComponent(q.author || 'Anonim')}'))" class="w-9 h-9 rounded-full bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 flex items-center justify-center transition" title="Paylaş">
-                                    <i class="fas fa-share-nodes text-sm"></i>
-                                </button>
-                                <button onclick="copyToClipboard(decodeURIComponent('${encodeURIComponent(q.text)}'))" class="w-9 h-9 rounded-full bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 flex items-center justify-center transition" title="Kopyala">
-                                    <i class="fas fa-copy text-sm"></i>
-                                </button>
-                                <button onclick="downloadImage('${q.id}')" class="w-9 h-9 rounded-full bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 flex items-center justify-center transition" title="İndir">
-                                    <i class="fas fa-image text-sm"></i>
-                                </button>
+                    <div class="bg-white rounded-[2rem] p-7 shadow-sm border border-slate-100 relative overflow-hidden group transition-all duration-300">
+                        <i class="fas fa-quote-right absolute -right-2 -top-2 text-7xl text-slate-50 opacity-60 -z-10 rotate-12"></i>
+                        <div class="mb-4"><span class="px-3 py-1 bg-indigo-50 text-indigo-500 rounded-full text-[9px] font-black uppercase tracking-wider">${q.category || 'Genel'}</span></div>
+                        <p class="text-slate-800 text-lg font-medium leading-relaxed mb-6">"${q.text}"</p>
+                        <div class="flex justify-between items-center pt-5 border-t border-slate-50">
+                            <p class="text-slate-400 text-[10px] font-bold">— ${q.author || 'Anonim'}</p>
+                            <div class="flex gap-2">
+                                <button onclick="shareQuote(\`${q.text}\`, \`${q.author}\`)" class="w-10 h-10 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center transition"><i class="fas fa-share-nodes text-xs"></i></button>
                                 ${isAdminLoggedIn ? `
-                                <button onclick="deleteQuote('${q.id}')" class="w-9 h-9 rounded-full bg-red-50 text-red-400 hover:text-red-600 hover:bg-red-100 flex items-center justify-center transition" title="Sil">
-                                    <i class="fas fa-trash-alt text-sm"></i>
-                                </button>` : ''}
+                                    <button onclick="editQuote('${q.id}')" class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-400 flex items-center justify-center transition"><i class="fas fa-pen text-xs"></i></button>
+                                    <button onclick="deleteQuote('${q.id}')" class="w-10 h-10 rounded-full bg-red-50 text-red-400 flex items-center justify-center transition"><i class="fas fa-trash-alt text-xs"></i></button>
+                                ` : ''}
                             </div>
                         </div>
                     </div>
                 </div>
             `).join('');
+
+            // Swipe Render
+            swpFeed.innerHTML = filteredQuotes.map(q => `
+                <div class="swipe-item">
+                    <div class="text-center max-w-lg">
+                        <i class="fas fa-quote-left text-5xl text-indigo-500/30 mb-8"></i>
+                        <p class="text-3xl md:text-5xl font-light text-slate-100 leading-tight mb-12 px-4 italic">"${q.text}"</p>
+                        <p class="text-indigo-400 text-xl font-semibold">— ${q.author || 'Anonim'}</p>
+                    </div>
+                    <div class="absolute bottom-20 flex gap-4">
+                        <button onclick="shareQuote(\`${q.text}\`, \`${q.author}\`)" class="w-14 h-14 rounded-full bg-white/10 text-white flex items-center justify-center backdrop-blur-xl border border-white/20"><i class="fas fa-share-alt"></i></button>
+                        <button onclick="switchView('gallery')" class="w-14 h-14 rounded-full bg-white/10 text-white flex items-center justify-center backdrop-blur-xl border border-white/20"><i class="fas fa-th-large"></i></button>
+                    </div>
+                </div>
+            `).join('');
         };
 
-        // Söz Paylaşma Fonksiyonu (Mobil Uyumlu)
+        window.switchView = (v) => {
+            currentView = v;
+            document.getElementById('gallery-feed').classList.toggle('hidden', v !== 'gallery');
+            document.getElementById('swipe-feed').classList.toggle('hidden', v !== 'swipe');
+            document.getElementById('daily-panel').classList.toggle('hidden', v !== 'gallery');
+            document.getElementById('view-gal-btn').classList.toggle('active-btn', v === 'gallery');
+            document.getElementById('view-swp-btn').classList.toggle('active-btn', v === 'swipe');
+            if(v === 'swipe') document.body.style.overflow = 'hidden';
+            else document.body.style.overflow = 'auto';
+        };
+
         window.shareQuote = async (text, author) => {
-            const shareData = {
-                title: 'Söz Kütüphanesi',
-                text: `"${text}"\n— ${author}`
-            };
-            
-            try {
-                if (navigator.share) {
-                    await navigator.share(shareData);
-                } else {
-                    copyToClipboard(text);
-                }
-            } catch (err) {
-                console.log('Paylaşım iptal edildi veya desteklenmiyor.');
-            }
+            const data = { title: 'İlham', text: `"${text}"\n— ${author}` };
+            if (navigator.share) await navigator.share(data);
+            else { const t = document.createElement("textarea"); t.value = data.text; document.body.appendChild(t); t.select(); document.execCommand("copy"); document.body.removeChild(t); showUIModal('alert', 'Kopyalandı', 'Söz panoya kopyalandı.'); }
         };
 
-        // Söz Kopyalama Fonksiyonu
-        window.copyToClipboard = (text) => {
-            const tempInput = document.createElement("textarea");
-            tempInput.value = text;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand("copy");
-            document.body.removeChild(tempInput);
-            
-            showUIModal('alert', 'Başarılı', 'Söz panoya kopyalandı!');
+        window.shareDaily = () => {
+            const t = document.getElementById('daily-text').innerText;
+            const a = document.getElementById('daily-author').innerText;
+            shareQuote(t.replace(/"/g, ''), a.replace('— ', ''));
         };
 
-        // Otomatik Kategori Bulucu
-        const autoCategorize = (text) => {
-            const lower = text.toLowerCase();
-            if (lower.match(/aşk|sevgi|kalp|özlem|sevgili/)) return 'Aşk';
-            if (lower.match(/başarı|hedef|çalış|kazan|mücadele|asla|pes/)) return 'Motivasyon';
-            if (lower.match(/zaman|hayat|insan|gerçek|dünya|anlam|yaşam/)) return 'Felsefe';
-            if (lower.match(/komik|gül|eğlence/)) return 'Mizah';
-            return 'Genel';
-        };
-
-        // Yönetici Girişi
         window.handleHeaderClick = () => {
             headerClickCount++;
             if (headerClickTimer) clearTimeout(headerClickTimer);
-            
             headerClickTimer = setTimeout(() => { headerClickCount = 0; }, 2000);
-
             if (headerClickCount === 5) {
                 headerClickCount = 0;
-                
-                // Zaten giriş yapılmışsa paneli kapat
-                if (isAdminLoggedIn) {
-                    isAdminLoggedIn = false;
-                    document.getElementById('admin-dashboard').classList.add('hidden');
-                    renderFeed();
-                    return;
-                }
-
-                showUIModal('prompt', 'Güvenlik', 'Yönetim şifresi:', (val) => {
-                    if(val === '22035034') {
-                        isAdminLoggedIn = true;
-                        document.getElementById('admin-dashboard').classList.remove('hidden');
-                        renderFeed();
-                    } else {
-                        showUIModal('alert', 'Hata', 'Şifre yanlış.');
+                if (isAdminLoggedIn) return;
+                showUIModal('prompt', 'Yönetici Girişi', 'Şifreyi girin:', (v) => {
+                    if(v === '22035034') { 
+                        isAdminLoggedIn = true; 
+                        document.getElementById('admin-dashboard').classList.remove('hidden'); 
+                        renderUI();
+                        window.scrollTo({top: 0, behavior: 'smooth'});
                     }
+                    else showUIModal('alert', 'Hata', 'Şifre yanlış.');
                 });
             }
         };
 
-        // Tekli Söz Ekleme
-        window.saveSingleQuote = async () => {
-            if(!currentUser) return;
-            const text = document.getElementById('single-quote-text').value.trim();
-            const author = document.getElementById('single-quote-author').value.trim();
-            const category = document.getElementById('single-quote-category').value.trim();
+        window.logoutAdmin = () => { isAdminLoggedIn = false; document.getElementById('admin-dashboard').classList.add('hidden'); renderUI(); };
 
-            if(!text) return showUIModal('alert', 'Uyarı', 'Lütfen bir söz girin.');
+        window.saveQuote = async () => {
+            const t = document.getElementById('quote-text').value.trim();
+            const a = document.getElementById('quote-author').value.trim() || 'Anonim';
+            const c = document.getElementById('quote-category').value.trim() || 'Genel';
+            const editId = document.getElementById('edit-id').value;
 
-            document.getElementById('loading-screen').classList.remove('hidden');
-            document.getElementById('loading-screen').querySelector('p').innerText = 'Ekleniyor...';
+            if(!t) return showUIModal('alert', 'Uyarı', 'Söz alanı boş.');
 
             try {
-                const quotesRef = collection(db, 'artifacts', appId, 'public', 'data', 'quotes');
-                await addDoc(quotesRef, {
-                    text: text,
-                    author: author || 'Anonim',
-                    category: category || autoCategorize(text),
-                    createdAt: Date.now(),
-                    addedBy: currentUser.uid
-                });
-                
-                document.getElementById('single-quote-text').value = '';
-                document.getElementById('single-quote-author').value = '';
-                document.getElementById('single-quote-category').value = '';
-                
-                document.getElementById('loading-screen').classList.add('hidden');
-                showUIModal('alert', 'Başarılı', 'Söz kütüphaneye eklendi.');
-            } catch (err) {
-                document.getElementById('loading-screen').classList.add('hidden');
-                showUIModal('alert', 'Hata', 'Kayıt başarısız oldu.');
-            }
+                if(editId) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'quotes', editId), { text: t, author: a, category: c });
+                } else {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'quotes'), { text: t, author: a, category: c, createdAt: Date.now() });
+                }
+                resetAdminForm();
+                showUIModal('alert', 'Başarılı', 'İşlem tamamlandı.');
+            } catch(e) { showUIModal('alert', 'Hata', 'Kayıt yapılamadı.'); }
         };
 
-        // Kutuya metin yapıştırıldığında otomatik kaydetme
-        document.getElementById('bulk-quotes').addEventListener('paste', () => {
-            setTimeout(() => {
-                if (document.getElementById('bulk-quotes').value.trim() !== '') {
-                    window.saveBulkQuotesSmart();
-                }
-            }, 300);
+        window.editQuote = (id) => {
+            const q = allQuotes.find(item => item.id === id);
+            document.getElementById('quote-text').value = q.text;
+            document.getElementById('quote-author').value = q.author;
+            document.getElementById('quote-category').value = q.category;
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-title').innerText = "Sözü Düzenle";
+            document.getElementById('save-btn').innerText = "Güncelle";
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        };
+
+        window.resetAdminForm = () => {
+            document.getElementById('quote-text').value = '';
+            document.getElementById('quote-author').value = '';
+            document.getElementById('quote-category').value = '';
+            document.getElementById('edit-id').value = '';
+            document.getElementById('edit-title').innerText = "Yeni Söz Ekle";
+            document.getElementById('save-btn').innerText = "Kaydet";
+        };
+
+        window.saveBulk = async () => {
+            const bulk = document.getElementById('bulk-quotes').value.trim();
+            if(!bulk) return;
+            const lines = bulk.split('\n').map(l => l.replace(/^[\.#\s]*/, '').trim()).filter(l => l.length > 3);
+            const qRef = collection(db, 'artifacts', appId, 'public', 'data', 'quotes');
+            for(let i=0; i<lines.length; i++){
+                await addDoc(qRef, { text: lines[i], author: 'Anonim', category: 'Genel', createdAt: Date.now() + i });
+            }
+            document.getElementById('bulk-quotes').value = '';
+            showUIModal('alert', 'Tamam', 'Toplu ekleme başarılı.');
+        };
+
+        window.deleteQuote = (id) => showUIModal('confirm', 'Sil?', 'Kalıcı olarak silinecek.', async () => await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'quotes', id)));
+
+        window.deleteAllQuotes = () => showUIModal('confirm', 'TÜMÜNÜ SİL?', 'Geri dönüş yok!', async () => {
+            const snapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'quotes'));
+            await Promise.all(snapshot.docs.map(d => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'quotes', d.id))));
+            showUIModal('alert', 'Temizlendi', 'Kütüphane boşaltıldı.');
         });
 
-        // Yapay Zeka Destekli Toplu Kayıt
-        window.saveBulkQuotesSmart = async () => {
-            if(!currentUser) return;
-            const bulkText = document.getElementById('bulk-quotes').value;
-            
-            if(!bulkText.trim()) {
-                showUIModal('alert', 'Uyarı', 'Lütfen metin girin.');
-                return;
-            }
-
-            const lines = bulkText.split('\n').map(l => l.replace(/^#\s*/, '').trim()).filter(l => l.length > 3);
-
-            if(lines.length === 0) {
-                showUIModal('alert', 'Uyarı', 'Geçerli söz bulunamadı.');
-                return;
-            }
-
-            document.getElementById('loading-screen').classList.remove('hidden');
-            document.getElementById('loading-screen').querySelector('p').innerText = 'Sözler analiz edilip kaydediliyor...';
-
-            try {
-                const quotesRef = collection(db, 'artifacts', appId, 'public', 'data', 'quotes');
-                let count = 0;
-                
-                for(const line of lines) {
-                    const category = autoCategorize(line); 
-                    await addDoc(quotesRef, {
-                        text: line,
-                        author: 'Anonim', 
-                        category: category, 
-                        createdAt: Date.now() + count, 
-                        addedBy: currentUser.uid
-                    });
-                    count++;
-                }
-                
-                document.getElementById('bulk-quotes').value = '';
-                document.getElementById('loading-screen').classList.add('hidden');
-                showUIModal('alert', 'Tamamlandı', `${count} adet söz başarıyla kategorize edilip eklendi.`);
-            } catch (err) {
-                document.getElementById('loading-screen').classList.add('hidden');
-                showUIModal('alert', 'Hata', 'Kayıt başarısız oldu. Hata detayı: ' + err.message);
-            }
-        };
-
-        // Tekli Söz Silme
-        window.deleteQuote = (id) => {
-            showUIModal('confirm', 'Sözü Sil', 'Bu sözü kalıcı olarak silmek istiyor musunuz?', async () => {
-                if(!currentUser) return;
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'quotes', id));
-            });
-        };
-
-        // Toplu Söz Silme
-        window.deleteAllQuotes = () => {
-            if(allQuotes.length === 0) return showUIModal('alert', 'Bilgi', 'Silinecek söz bulunmuyor.');
-            
-            showUIModal('confirm', 'TÜMÜNÜ SİL', 'DİKKAT! Kütüphanedeki BÜTÜN sözler kalıcı olarak silinecek. Geri alınamaz. Onaylıyor musunuz?', async () => {
-                if(!currentUser) return;
-                
-                document.getElementById('loading-screen').classList.remove('hidden');
-                document.getElementById('loading-screen').querySelector('p').innerText = 'Sözler siliniyor...';
-
-                try {
-                    const promises = allQuotes.map(q => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'quotes', q.id)));
-                    await Promise.all(promises);
-                    
-                    document.getElementById('loading-screen').classList.add('hidden');
-                    showUIModal('alert', 'Başarılı', 'Bütün sözler başarıyla silindi.');
-                } catch(e) {
-                    document.getElementById('loading-screen').classList.add('hidden');
-                    showUIModal('alert', 'Hata', 'Silme işlemi sırasında bir hata oluştu.');
-                }
-            });
-        };
-
-        // JSON Olarak Dışa Aktar
         window.exportData = () => {
-            if(allQuotes.length === 0) return showUIModal('alert', 'Uyarı', 'Sistemde dışa aktarılacak söz yok.');
-            
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allQuotes, null, 2));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", `sozler_yedek.json`);
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
+            const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allQuotes, null, 2));
+            const a = document.createElement('a'); a.href = data; a.download = `yedek_${Date.now()}.json`; a.click();
         };
 
-        // Resim Olarak İndir
         window.downloadImage = (id) => {
-            const card = document.getElementById(`card-${id}`).querySelector('.quote-card');
-            const actions = card.querySelector('.flex.gap-1\\.5'); // İkon kutusu sınıfı
-            if(actions) actions.style.opacity = '0'; // İndirirken ikonlar görünmesin
-            
-            html2canvas(card, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `soz.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-                if(actions) actions.style.opacity = ''; 
+            const card = document.getElementById(`card-${id}`).children[0];
+            const btns = card.querySelector('.flex.gap-2');
+            btns.style.display = 'none';
+            html2canvas(card, { scale: 2, backgroundColor: '#ffffff', borderRadius: 32 }).then(canvas => {
+                const a = document.createElement('a'); a.download = `soz.png`; a.href = canvas.toDataURL(); a.click();
+                btns.style.display = 'flex';
             });
         };
 
