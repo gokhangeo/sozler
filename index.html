@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
         :root{
@@ -88,12 +87,6 @@
             transition: transform .4s ease, box-shadow .4s ease;
         }
         .quote-card:hover{ transform: translateY(-4px); box-shadow: 0 24px 48px -20px rgba(33,28,23,.18); }
-        .quote-card--art .qc-text,
-        .quote-card--art .qc-author{ color:#fbf5ec; text-shadow:0 2px 10px rgba(0,0,0,.45); }
-        .quote-card--art .qc-tag{ background:rgba(255,255,255,.18); color:#fff; backdrop-filter:blur(4px); }
-        .quote-card--art .qc-icon-btn{ background:rgba(255,255,255,.16); color:#fff; }
-        .quote-card--art .qc-icon-btn:hover{ background:rgba(255,255,255,.32); }
-        .ink-veil{ position:absolute; inset:0; background:rgba(20,15,12,.22); }
 
         .qc-tag{
             display:inline-block; padding:.35rem 1rem; border-radius:999px; font-size:9px;
@@ -104,7 +97,6 @@
         .qc-author{ font-size:10px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); }
         .qc-top, .qc-bottom{ position:relative; z-index:1; display:flex; justify-content:space-between; align-items:center; }
         .qc-bottom{ padding-top:1.25rem; border-top:1px solid rgba(33,28,23,.07); }
-        .quote-card--art .qc-bottom{ border-top-color: rgba(255,255,255,.2); }
         .qc-actions{ display:flex; gap:.4rem; }
         .qc-icon-btn{
             width:34px; height:34px; border-radius:999px; display:flex; align-items:center; justify-content:center;
@@ -147,6 +139,9 @@
                     <i class="fa-solid fa-feather-pointed text-xl" style="color:var(--cherry);"></i> Söz Kütüphanesi
                 </h1>
                 <div class="flex gap-2">
+                    <button onclick="showRandomQuote()" id="random-quote-btn" title="Rastgele söz" aria-label="Rastgele söz göster" class="p-3 rounded-xl bg-white border qc-icon-btn" style="border-color:var(--paper-edge); width:auto; height:auto;">
+                        <i class="fas fa-shuffle"></i>
+                    </button>
                     <button onclick="switchView('gallery')" id="view-gal-btn" title="Kart görünümü" aria-label="Kart görünümü" class="p-3 rounded-xl bg-white border qc-icon-btn" style="border-color:var(--paper-edge); width:auto; height:auto;">
                         <i class="fas fa-th-large"></i>
                     </button>
@@ -173,9 +168,6 @@
             <div class="relative z-10">
                 <div class="flex items-center justify-between mb-6">
                     <span class="inline-block px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em]" style="background:rgba(184,144,47,.25); color:#f2d998;">Günün İlhamı</span>
-                    <button onclick="toggleMarblingFor(dailyQuoteId)" title="Ebru oluştur" class="w-9 h-9 rounded-full flex items-center justify-center transition" style="background:rgba(255,255,255,.12); color:#fff;">
-                        <i class="fa-solid fa-paintbrush text-xs"></i>
-                    </button>
                 </div>
                 <p id="daily-text" class="font-display italic text-2xl md:text-4xl font-normal leading-tight mb-8">"..."</p>
                 <div class="flex justify-between items-end">
@@ -185,7 +177,7 @@
                     </div>
                     <div class="flex gap-2">
                         <button id="daily-favorite-btn" onclick="toggleFavorite(dailyQuoteId)" title="Favoriye ekle" class="w-12 h-12 rounded-full hover:bg-white/20 transition flex items-center justify-center" style="background:rgba(255,255,255,.1);"><i class="far fa-heart"></i></button>
-                        <button onclick="generateImageForQuote('daily')" title="Görsel hazırla" class="w-12 h-12 rounded-full hover:bg-white/20 transition flex items-center justify-center" style="background:rgba(255,255,255,.1);"><i class="fas fa-wand-magic-sparkles"></i></button>
+                        <button onclick="copyQuoteById(dailyQuoteId)" title="Kopyala" class="w-12 h-12 rounded-full hover:bg-white/20 transition flex items-center justify-center" style="background:rgba(255,255,255,.1);"><i class="far fa-copy"></i></button>
                         <button onclick="shareDaily()" title="Paylaş" class="w-12 h-12 rounded-full hover:bg-white/20 transition flex items-center justify-center" style="background:rgba(255,255,255,.1);"><i class="fas fa-share-alt"></i></button>
                     </div>
                 </div>
@@ -261,37 +253,6 @@
         </div>
     </div>
 
-    <!-- Görsel Oluşturucu Modal -->
-    <div id="image-gen-modal" class="fixed inset-0 bg-black/90 z-[400] hidden flex flex-col items-center justify-center p-4 backdrop-blur-xl">
-        <div class="w-full max-w-lg flex justify-between items-center mb-6">
-            <h3 class="text-white font-bold text-xl"><i class="fas fa-wand-magic-sparkles text-indigo-400 mr-2"></i> Görsel Stüdyosu</h3>
-            <button onclick="closeImageGen()" class="text-white/50 hover:text-white w-10 h-10 flex items-center justify-center bg-white/10 rounded-full"><i class="fas fa-times"></i></button>
-        </div>
-        
-        <div id="export-card" class="relative w-full max-w-lg aspect-square rounded-[2rem] overflow-hidden shadow-2xl flex flex-col justify-center items-center p-10 text-center">
-            <div id="export-bg" class="absolute inset-0 bg-gradient-to-br from-indigo-900 to-slate-900 z-0 bg-cover bg-center transition-all duration-1000"></div>
-            <div class="absolute inset-0 bg-black/40 z-0 backdrop-blur-[2px]"></div>
-            
-            <div class="relative z-10 w-full">
-                <i class="fas fa-quote-left text-4xl text-white/30 mb-6"></i>
-                <p id="export-text" class="font-display text-white text-2xl sm:text-3xl font-bold leading-tight mb-8 drop-shadow-lg">"Söz"</p>
-                <div class="inline-block px-6 py-2 rounded-full border border-white/20 bg-black/30 backdrop-blur-md">
-                    <p id="export-author" class="text-white/90 font-semibold text-sm tracking-widest uppercase">— Yazar</p>
-                </div>
-            </div>
-            <div class="absolute bottom-6 text-white/30 text-[10px] uppercase tracking-[0.3em] font-bold z-10">Söz Kütüphanesi PRO</div>
-        </div>
-
-        <div class="w-full max-w-lg mt-8 grid grid-cols-2 gap-4">
-            <button onclick="shuffleBackground()" class="py-4 rounded-2xl bg-white/10 text-white font-bold hover:bg-white/20 transition-all border border-white/10 flex items-center justify-center gap-2">
-                <i class="fas fa-shuffle"></i> Arka Plan Değiştir
-            </button>
-            <button onclick="downloadGeneratedImage()" class="py-4 rounded-2xl bg-indigo-500 text-white font-bold hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2">
-                <i class="fas fa-download"></i> Görseli İndir
-            </button>
-        </div>
-    </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -314,46 +275,27 @@
 
         let currentUser = null, allQuotes = [], filteredQuotes = [], isAdminLoggedIn = false;
         let headerClickCount = 0, headerClickTimer = null, currentCategory = 'Tümü', currentView = 'gallery';
-        let currentQuoteForImage = null;
         let favorites = new Set();
         let searchTimer = null, favoritesUnsubscribe = null;
         window.dailyQuoteId = null;
 
-        // ---------- Ebru (marbling) background generator ----------
-        const MARBLE_PALETTES = {
-            'Aşk': ['#9c2b3c', '#c9184a', '#e0607e', '#5c1522', '#f2a6b9'],
-            'Motivasyon': ['#b8902f', '#d9a441', '#e8c468', '#7a5f19', '#f4dfa0'],
-            'Felsefe': ['#38507a', '#2f3e63', '#5b7aa6', '#1c2740', '#93a9c9'],
-            'Mizah': ['#5f6f3f', '#7c9451', '#98b06a', '#37421f', '#c3d69b'],
-            'Genel': ['#4b3f3a', '#6e5c52', '#8a746a', '#241d19', '#b3a094']
-        };
-        const hashSeed = (str) => { let h = 0; for (let i = 0; i < str.length; i++) { h = (Math.imul(31, h) + str.charCodeAt(i)) | 0; } return Math.abs(h); };
-        const mulberry32 = (a) => function () { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-        const generateMarbling = (text, category, seed = 0) => {
-            const palette = MARBLE_PALETTES[category] || MARBLE_PALETTES['Genel'];
-            const rnd = mulberry32(hashSeed(text || '') + Number(seed || 0));
-            const pick = () => palette[Math.floor(rnd() * palette.length)];
-            const layers = [`linear-gradient(${Math.floor(rnd() * 360)}deg, ${pick()}, ${pick()})`];
-            const blobCount = 4 + Math.floor(rnd() * 3);
-            for (let i = 0; i < blobCount; i++) {
-                const x = Math.floor(rnd() * 100), y = Math.floor(rnd() * 100), size = 25 + Math.floor(rnd() * 35);
-                const c = pick();
-                layers.push(`radial-gradient(circle at ${x}% ${y}%, ${c}dd 0%, ${c}00 ${size}%)`);
+        const normalizeQuoteText = (value = '') => {
+            let text = String(value).trim();
+            const pairs = [
+                ['"', '"'], ["'", "'"], ['“', '”'], ['‘', '’'], ['«', '»']
+            ];
+            let changed = true;
+            while (changed && text.length > 1) {
+                changed = false;
+                for (const [open, close] of pairs) {
+                    if (text.startsWith(open) && text.endsWith(close)) {
+                        text = text.slice(open.length, -close.length).trim();
+                        changed = true;
+                        break;
+                    }
+                }
             }
-            return layers.join(', ');
-        };
-
-        window.toggleMarblingFor = async (id) => {
-            if (!id) return;
-            try {
-                const newSeed = Date.now() + Math.floor(Math.random() * 1000);
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'quotes', id), { bgSeed: newSeed });
-            } catch (e) { showUIModal('alert', 'Hata', 'Ebru oluşturulamadı.'); }
-        };
-        
-        window.clearMarblingFor = async (id) => {
-            if (!id) return;
-            try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'quotes', id), { bgSeed: null }); } catch (e) {}
+            return text;
         };
 
         const showUIModal = (type, title, message, onConfirm = null) => {
@@ -434,7 +376,7 @@
                     appCont.classList.remove('hidden'); 
                     setTimeout(() => { if (appCont) appCont.classList.remove('opacity-0'); }, 50); 
                 }
-                allQuotes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => b.createdAt - a.createdAt);
+                allQuotes = snapshot.docs.map(doc => { const data = doc.data(); return { id: doc.id, ...data, text: normalizeQuoteText(data.text || '') }; }).sort((a, b) => b.createdAt - a.createdAt);
                 setDailyQuote(); updateCategories(); filterQuotes(); updateDailyFavoriteButton();
             }, (err) => console.error(err));
         };
@@ -446,21 +388,16 @@
             window.dailyQuoteId = quote.id;
             
             const txtEl = document.getElementById('daily-text');
-            if (txtEl) txtEl.innerText = `"${quote.text}"`;
+            if (txtEl) txtEl.innerText = `“${normalizeQuoteText(quote.text)}”`;
             
             const authorEl = document.getElementById('daily-author');
             if (authorEl) authorEl.innerText = `— ${quote.author || 'Anonim'}`;
             
             const panel = document.getElementById('daily-panel');
             const veil = document.getElementById('daily-veil');
-            if (panel && veil) {
-                if (quote.bgSeed) {
-                    panel.style.backgroundImage = generateMarbling(quote.text, quote.category, quote.bgSeed);
-                    veil.style.display = 'block';
-                } else {
-                    panel.style.backgroundImage = 'none';
-                    veil.style.display = 'none';
-                }
+            if (panel) {
+                panel.style.backgroundImage = 'none';
+                if (veil) veil.style.display = 'none';
                 panel.classList.remove('hidden');
             }
         };
@@ -502,27 +439,19 @@
 
             if (galFeed) {
                 galFeed.innerHTML = filteredQuotes.map(q => {
-                    const hasArt = !!q.bgSeed;
-                    const bgCss = hasArt ? generateMarbling(q.text, q.category, q.bgSeed) : '';
-                    const styleAttr = hasArt ? `style="background-image:${bgCss}"` : '';
                     return `
                     <div class="masonry-item" id="card-${q.id}">
-                        <div class="quote-card ${hasArt ? 'quote-card--art' : ''}" ${styleAttr}>
-                            ${hasArt ? '<div class="ink-veil"></div>' : ''}
+                        <div class="quote-card">
                             <div class="qc-top">
                                 <span class="qc-tag">${escapeHTML(q.category || 'Genel')}</span>
-                                <div class="qc-actions">
-                                    <button title="Ebru oluştur" onclick="toggleMarblingFor('${q.id}')" class="qc-icon-btn"><i class="fa-solid fa-paintbrush"></i></button>
-                                    ${hasArt ? `<button title="Sıfırla" onclick="clearMarblingFor('${q.id}')" class="qc-icon-btn"><i class="fa-solid fa-rotate-left"></i></button>` : ''}
-                                </div>
                             </div>
-                            <p class="qc-text">"${escapeHTML(q.text)}"</p>
+                            <p class="qc-text">“${escapeHTML(normalizeQuoteText(q.text))}”</p>
                             <div class="qc-bottom">
                                 <p class="qc-author">— ${escapeHTML(q.author || 'Anonim')}</p>
                                 <div class="qc-actions">
                                     <button onclick="toggleFavorite('${q.id}')" title="Favoriye ekle/çıkar" class="qc-icon-btn ${favorites.has(q.id) ? 'favorite-active' : ''}"><i class="${favorites.has(q.id) ? 'fas' : 'far'} fa-heart"></i></button>
+                                    <button onclick="copyQuoteById('${q.id}')" title="Kopyala" class="qc-icon-btn"><i class="far fa-copy"></i></button>
                                     <button onclick="shareQuoteById('${q.id}')" title="Paylaş" class="qc-icon-btn"><i class="fas fa-share-nodes"></i></button>
-                                    <button onclick="generateImageForQuote('${q.id}')" title="Görsel hazırla" class="qc-icon-btn"><i class="fas fa-wand-magic-sparkles"></i></button>
                                     ${isAdminLoggedIn ? `
                                         <button onclick="editQuote('${q.id}')" class="qc-icon-btn"><i class="fas fa-pen"></i></button>
                                         <button onclick="deleteQuote('${q.id}')" class="qc-icon-btn"><i class="fas fa-trash-alt"></i></button>
@@ -536,22 +465,18 @@
 
             if (swpFeed) {
                 swpFeed.innerHTML = filteredQuotes.map(q => {
-                    const hasArt = !!q.bgSeed;
-                    const bgCss = hasArt ? generateMarbling(q.text, q.category, q.bgSeed) : '';
-                    const styleAttr = hasArt ? `style="background-image:${bgCss}"` : '';
                     return `
-                    <div class="swipe-item" ${styleAttr}>
-                        ${hasArt ? '<div class="ink-veil"></div>' : ''}
+                    <div class="swipe-item">
                         <button onclick="switchView('gallery')" aria-label="Tam ekran görünümünü kapat" class="fixed top-5 right-5 z-[120] w-11 h-11 rounded-full text-white flex items-center justify-center" style="background:rgba(0,0,0,.32); backdrop-filter:blur(8px);"><i class="fas fa-times"></i></button>
                         <div class="text-center max-w-xl relative z-10">
                             <i class="fas fa-quote-left text-6xl mb-10" style="color:rgba(184,144,47,.5);"></i>
-                            <p class="font-display italic text-3xl md:text-5xl text-white leading-tight mb-10 px-4" style="text-shadow:0 2px 12px rgba(0,0,0,.5);">"${escapeHTML(q.text)}"</p>
+                            <p class="font-display italic text-3xl md:text-5xl text-white leading-tight mb-10 px-4" style="text-shadow:0 2px 12px rgba(0,0,0,.5);">“${escapeHTML(normalizeQuoteText(q.text))}”</p>
                             <p class="text-lg font-semibold uppercase tracking-widest" style="color:#f2d998;">— ${escapeHTML(q.author || 'Anonim')}</p>
                         </div>
                         <div class="absolute bottom-20 flex gap-5 relative z-10">
                             <button onclick="toggleFavorite('${q.id}')" class="w-14 h-14 rounded-full text-white flex items-center justify-center border border-white/10" style="background:${favorites.has(q.id) ? 'rgba(159,18,57,.85)' : 'rgba(255,255,255,.08)'};"><i class="${favorites.has(q.id) ? 'fas' : 'far'} fa-heart"></i></button>
+                            <button onclick="copyQuoteById('${q.id}')" title="Kopyala" class="w-14 h-14 rounded-full text-white flex items-center justify-center border border-white/10" style="background:rgba(255,255,255,.08);"><i class="far fa-copy"></i></button>
                             <button onclick="shareQuoteById('${q.id}')" class="w-14 h-14 rounded-full text-white flex items-center justify-center border border-white/10" style="background:rgba(255,255,255,.08);"><i class="fas fa-share-alt"></i></button>
-                            <button onclick="generateImageForQuote('${q.id}')" class="w-14 h-14 rounded-full text-white flex items-center justify-center border border-white/10" style="background:rgba(255,255,255,.08);"><i class="fas fa-wand-magic-sparkles"></i></button>
                         </div>
                     </div>`;
                 }).join('');
@@ -590,8 +515,33 @@
                 await copyText(value);
             } catch(e) { if (e?.name !== 'AbortError') await copyText(value); }
         };
-        window.shareQuoteById = id => { const q=allQuotes.find(x=>x.id===id); if(q) shareQuote(q.text,q.author); };
+        window.copyQuoteById = async id => {
+            const q = allQuotes.find(x => x.id === id);
+            if (!q) return;
+            await copyText(`“${normalizeQuoteText(q.text)}”\n— ${q.author || 'Anonim'}`);
+        };
+        window.shareQuoteById = id => { const q=allQuotes.find(x=>x.id===id); if(q) shareQuote(normalizeQuoteText(q.text),q.author); };
         window.shareDaily = () => shareQuoteById(window.dailyQuoteId);
+
+        window.showRandomQuote = () => {
+            const pool = filteredQuotes.length ? filteredQuotes : allQuotes;
+            if (!pool.length) return showUIModal('alert', 'Rastgele Söz', 'Kütüphanede henüz söz bulunmuyor.');
+            const quote = pool[Math.floor(Math.random() * pool.length)];
+            switchView('gallery');
+            requestAnimationFrame(() => {
+                const card = document.getElementById(`card-${quote.id}`);
+                if (!card) return;
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const inner = card.querySelector('.quote-card');
+                if (inner) {
+                    inner.animate([
+                        { transform: 'scale(1)', boxShadow: '0 4px 20px -2px rgba(0,0,0,.05)' },
+                        { transform: 'scale(1.025)', boxShadow: '0 20px 45px -12px rgba(159,18,57,.35)' },
+                        { transform: 'scale(1)', boxShadow: '0 4px 20px -2px rgba(0,0,0,.05)' }
+                    ], { duration: 1100, easing: 'ease-out' });
+                }
+            });
+        };
         const updateDailyFavoriteButton = () => {
             const b=document.getElementById('daily-favorite-btn'); if(!b || !window.dailyQuoteId) return;
             const active=favorites.has(window.dailyQuoteId); b.innerHTML=`<i class="${active?'fas':'far'} fa-heart"></i>`; b.style.background=active?'rgba(159,18,57,.9)':'rgba(255,255,255,.1)';
@@ -661,18 +611,18 @@
         };
 
         const parseQuoteLine = (line) => {
-            let text = line.trim();
+            let text = normalizeQuoteText(line);
             let author = 'Anonim';
             const match = text.match(/\(([^)]+)\)$/);
             if (match) { 
                 author = match[1].trim(); 
                 text = text.replace(match[0], '').trim(); 
             }
-            return { text, author };
+            return { text: normalizeQuoteText(text), author };
         };
 
         window.fixExistingQuotes = async () => {
-            showUIModal('confirm', 'Kütüphaneyi Düzenle', 'Tüm kütüphane taranacak ve parantez içindeki yazar isimleri ayrıştırılacak. Onaylıyor musunuz?', async () => {
+            showUIModal('confirm', 'Kütüphaneyi Düzenle', 'Tüm kütüphane taranacak; çift tırnaklar temizlenecek ve parantez içindeki yazar isimleri ayrıştırılacak. Onaylıyor musunuz?', async () => {
                 const loader = document.getElementById('loading-screen');
                 if (loader) { loader.classList.remove('hidden'); loader.classList.remove('fade-out'); }
                 try {
@@ -680,14 +630,18 @@
                     const snapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'quotes'));
                     for (const docSnap of snapshot.docs) {
                         const data = docSnap.data();
-                        if (data.text && data.text.match(/\(([^)]+)\)$/)) {
-                            const { text, author } = parseQuoteLine(data.text);
-                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'quotes', docSnap.id), { text, author });
-                            fixCount++;
+                        if (data.text) {
+                            const parsed = parseQuoteLine(data.text);
+                            const cleanedText = normalizeQuoteText(parsed.text);
+                            const currentAuthor = data.author || parsed.author;
+                            if (cleanedText !== data.text || (!data.author && parsed.author !== 'Anonim')) {
+                                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'quotes', docSnap.id), { text: cleanedText, author: currentAuthor });
+                                fixCount++;
+                            }
                         }
                     }
                     if (loader) loader.classList.add('hidden');
-                    showUIModal('alert', 'Tamamlandı', `${fixCount} adet sözün yazarı başarıyla düzeltildi.`);
+                    showUIModal('alert', 'Tamamlandı', `${fixCount} adet söz başarıyla temizlendi.`);
                 } catch (e) {
                     if (loader) loader.classList.add('hidden');
                     showUIModal('alert', 'Hata', 'Düzenleme işlemi sırasında bir sorun oluştu.');
@@ -714,7 +668,7 @@
                 if (editId) { 
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'quotes', editId), { text, author: finalAuthor, category: catStr }); 
                 } else { 
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'quotes'), { text, author: finalAuthor, category: catStr, createdAt: Date.now(), bgSeed: null }); 
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'quotes'), { text, author: finalAuthor, category: catStr, createdAt: Date.now() }); 
                 }
                 resetAdminForm(); 
                 showUIModal('alert', 'Başarılı', 'İşlem tamamlandı.');
@@ -774,7 +728,7 @@
             try {
                 for (let i = 0; i < lines.length; i++) {
                     const { text, author } = parseQuoteLine(lines[i]);
-                    await addDoc(qRef, { text, author, category: autoCat(text), createdAt: Date.now() + i, bgSeed: null });
+                    await addDoc(qRef, { text, author, category: autoCat(text), createdAt: Date.now() + i });
                 }
                 if (bulkInput) bulkInput.value = '';
                 if (loader) loader.classList.add('hidden');
@@ -814,80 +768,6 @@
             a.href = data; 
             a.download = `yedek_${Date.now()}.json`; 
             a.click(); 
-        };
-
-        /* Görsel Stüdyosu Fonksiyonları */
-        window.generateImageForQuote = (id) => {
-            let quoteObj;
-            if (id === 'daily') {
-                const dailyPanel = document.getElementById('daily-panel');
-                if (!dailyPanel) return;
-                const dailyId = window.dailyQuoteId;
-                quoteObj = allQuotes.find(q => q.id === dailyId);
-            } else {
-                quoteObj = allQuotes.find(q => q.id === id);
-            }
-            if (!quoteObj) return;
-            
-            currentQuoteForImage = quoteObj;
-            const exportText = document.getElementById('export-text');
-            if (exportText) exportText.innerText = `"${quoteObj.text}"`;
-            
-            const exportAuthor = document.getElementById('export-author');
-            if (exportAuthor) exportAuthor.innerText = `— ${quoteObj.author || 'Anonim'}`;
-            
-            setDynamicBackground(quoteObj.category);
-            const modal = document.getElementById('image-gen-modal');
-            if (modal) modal.classList.remove('hidden');
-        };
-
-        window.closeImageGen = () => {
-            const modal = document.getElementById('image-gen-modal');
-            if (modal) modal.classList.add('hidden');
-        };
-
-        window.shuffleBackground = () => {
-            if (!currentQuoteForImage) return;
-            const styles = ['aesthetic', 'cinematic', 'minimalist', 'abstract', 'nature', 'dark moody', 'ethereal'];
-            const randomStyle = styles[Math.floor(Math.random() * styles.length)];
-            setDynamicBackground(currentQuoteForImage.category, randomStyle);
-        };
-
-        const setDynamicBackground = (category, style = 'aesthetic minimal') => {
-            const cat = category || 'inspiration';
-            const seed = Math.floor(Math.random() * 10000);
-            const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(cat + ' ' + style + ' background no text')}?width=800&height=800&nologo=true&seed=${seed}`;
-            const bgEl = document.getElementById('export-bg');
-            if (bgEl) bgEl.style.backgroundImage = `url('${url}')`;
-        };
-
-        window.downloadGeneratedImage = () => {
-            const card = document.getElementById('export-card');
-            if (!card) return;
-            html2canvas(card, { scale: 3, useCORS: true, allowTaint: true, backgroundColor: '#0f172a' }).then(canvas => {
-                const a = document.createElement('a'); 
-                a.download = `soz_${(currentQuoteForImage.author || 'Anonim').replace(/\s+/g, '_')}_${Date.now()}.png`; 
-                a.href = canvas.toDataURL("image/png"); 
-                a.click();
-            }).catch(err => console.error(err));
-        };
-
-        window.downloadImage = (id) => {
-            const cardWrap = document.getElementById(`card-${id}`); 
-            if (!cardWrap) return;
-            const card = cardWrap.children[0];
-            const actionRows = card.querySelectorAll('.qc-actions');
-            actionRows.forEach(r => r.style.opacity = '0');
-            
-            html2canvas(card, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => {
-                const a = document.createElement('a'); 
-                a.download = `soz_${id.substring(0, 4)}.png`; 
-                a.href = canvas.toDataURL(); 
-                a.click();
-                actionRows.forEach(r => r.style.opacity = '1');
-            }).catch(err => {
-                actionRows.forEach(r => r.style.opacity = '1');
-            });
         };
 
         document.addEventListener('keydown',e=>{if(e.key==='Escape'&&currentView==='swipe')switchView('gallery');});
