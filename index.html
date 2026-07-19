@@ -25,7 +25,7 @@
         body{
             font-family:'Inter',sans-serif;
             background-color: var(--paper);
-            background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            background-image: radial-gradient(circle at top left, rgba(159,18,57,.07), transparent 35%), radial-gradient(circle at top right, rgba(184,144,47,.08), transparent 35%);
             background-attachment: fixed;
             color: var(--ink);
             touch-action: manipulation;
@@ -111,6 +111,17 @@
             background: rgba(33,28,23,.05); color:var(--ink-soft); font-size:12px; transition: all .2s ease;
         }
         .qc-icon-btn:hover{ background: var(--cherry); color:#fff; }
+        .qc-icon-btn.favorite-active{ background:var(--cherry); color:#fff; }
+        .sync-status{ font-size:11px; color:var(--ink-faint); line-height:1.5; }
+        @media (max-width:640px){
+            .sticky-header{ padding-top:.35rem; }
+            .sticky-header header{ margin-bottom:.65rem; }
+            #search-input{ padding-top:.65rem; padding-bottom:.65rem; }
+            .cat-pill{ padding:.45rem .8rem; font-size:10px; }
+            .quote-card{ padding:1.4rem; border-radius:1.35rem; }
+            .qc-text{ font-size:1.2rem; margin:1.15rem 0 1.4rem; }
+            #daily-panel{ padding:1.5rem; border-radius:1.5rem; }
+        }
 
         .btn-primary{ background:var(--cherry); color:#fff; transition:background .2s ease; }
         .btn-primary:hover{ background:var(--cherry-dark); }
@@ -136,10 +147,10 @@
                     <i class="fa-solid fa-feather-pointed text-xl" style="color:var(--cherry);"></i> Söz Kütüphanesi
                 </h1>
                 <div class="flex gap-2">
-                    <button onclick="switchView('gallery')" id="view-gal-btn" class="p-3 rounded-xl bg-white border qc-icon-btn" style="border-color:var(--paper-edge); width:auto; height:auto;">
+                    <button onclick="switchView('gallery')" id="view-gal-btn" title="Kart görünümü" aria-label="Kart görünümü" class="p-3 rounded-xl bg-white border qc-icon-btn" style="border-color:var(--paper-edge); width:auto; height:auto;">
                         <i class="fas fa-th-large"></i>
                     </button>
-                    <button onclick="switchView('swipe')" id="view-swp-btn" class="p-3 rounded-xl bg-white border qc-icon-btn" style="border-color:var(--paper-edge); width:auto; height:auto;">
+                    <button onclick="switchView('swipe')" id="view-swp-btn" title="Tam ekran söz görünümü" aria-label="Tam ekran söz görünümü" class="p-3 rounded-xl bg-white border qc-icon-btn" style="border-color:var(--paper-edge); width:auto; height:auto;">
                         <i class="fas fa-mobile-screen"></i>
                     </button>
                 </div>
@@ -147,7 +158,7 @@
 
             <div class="flex items-center bg-white rounded-2xl px-4 mb-4 border transition-all" style="border-color:var(--paper-edge);">
                 <i class="fas fa-search mr-3 text-sm" style="color:var(--ink-faint);"></i>
-                <input type="text" id="search-input" onkeyup="filterQuotes()" placeholder="Sözlerde ara..." class="w-full py-3 bg-transparent outline-none text-sm">
+                <input type="text" id="search-input" oninput="handleSearch()" placeholder="Sözlerde ara..." class="w-full py-3 bg-transparent outline-none text-sm">
             </div>
 
             <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" id="category-filters"></div>
@@ -172,9 +183,11 @@
                         <p id="daily-author" class="font-semibold text-lg" style="color:#f2d998;">— </p>
                         <p class="text-[10px] text-white/40 uppercase mt-1 tracking-widest">Söz Kütüphanesi</p>
                     </div>
-                    <button onclick="shareDaily()" class="w-12 h-12 rounded-full hover:bg-white/20 transition flex items-center justify-center" style="background:rgba(255,255,255,.1);">
-                        <i class="fas fa-share-alt"></i>
-                    </button>
+                    <div class="flex gap-2">
+                        <button id="daily-favorite-btn" onclick="toggleFavorite(dailyQuoteId)" title="Favoriye ekle" class="w-12 h-12 rounded-full hover:bg-white/20 transition flex items-center justify-center" style="background:rgba(255,255,255,.1);"><i class="far fa-heart"></i></button>
+                        <button onclick="generateImageForQuote('daily')" title="Görsel hazırla" class="w-12 h-12 rounded-full hover:bg-white/20 transition flex items-center justify-center" style="background:rgba(255,255,255,.1);"><i class="fas fa-wand-magic-sparkles"></i></button>
+                        <button onclick="shareDaily()" title="Paylaş" class="w-12 h-12 rounded-full hover:bg-white/20 transition flex items-center justify-center" style="background:rgba(255,255,255,.1);"><i class="fas fa-share-alt"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -216,6 +229,10 @@
                         <button onclick="exportData()" class="flex-1 bg-white border py-2 rounded-xl text-xs font-bold" style="border-color:var(--paper-edge); color:var(--ink-soft);">Yedek Al</button>
                         <button onclick="deleteAllQuotes()" class="flex-1 text-[10px] font-black uppercase" style="color:#c2634f;">Kütüphaneyi Temizle</button>
                     </div>
+                </div>
+                <div class="space-y-3 md:col-span-2 pt-6 border-t" style="border-color:var(--paper-edge);">
+                    <div class="text-xs font-black uppercase tracking-widest" style="color:var(--ink-faint);">Firebase Favori Senkronizasyonu</div>
+                    <p id="firebase-favorite-status" class="sync-status">Favoriler mevcut Firebase veritabanına otomatik kaydedilir ve açık cihazlarda anlık eşitlenir.</p>
                 </div>
             </div>
         </div>
@@ -278,7 +295,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, updateDoc, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCVbPr8GHUqx5nWtVlv_QVep5Or8vvLTGk",
@@ -298,6 +315,8 @@
         let currentUser = null, allQuotes = [], filteredQuotes = [], isAdminLoggedIn = false;
         let headerClickCount = 0, headerClickTimer = null, currentCategory = 'Tümü', currentView = 'gallery';
         let currentQuoteForImage = null;
+        let favorites = new Set();
+        let searchTimer = null, favoritesUnsubscribe = null;
         window.dailyQuoteId = null;
 
         // ---------- Ebru (marbling) background generator ----------
@@ -380,7 +399,27 @@
             catch (e) { const loader = document.getElementById('loading-screen'); if (loader) loader.innerHTML = `<p class='p-8 text-center text-red-500'>Bağlantı Hatası: ${e.message}</p>`; }
         };
 
-        onAuthStateChanged(auth, (user) => { if (user) { currentUser = user; loadData(); } });
+        onAuthStateChanged(auth, (user) => { if (user) { currentUser = user; loadData(); loadFavorites(); } });
+
+        const setFavoriteStatus = (text) => {
+            const el = document.getElementById('firebase-favorite-status');
+            if (el) el.textContent = text;
+        };
+
+        const loadFavorites = () => {
+            if (favoritesUnsubscribe) favoritesUnsubscribe();
+            const favoritesRef = collection(db, 'artifacts', appId, 'public', 'data', 'favorites');
+            favoritesUnsubscribe = onSnapshot(favoritesRef, (snapshot) => {
+                favorites = new Set(snapshot.docs.map(item => item.id));
+                updateCategories();
+                filterQuotes();
+                updateDailyFavoriteButton();
+                setFavoriteStatus(`${favorites.size} favori Firebase ile eşitlendi.`);
+            }, (error) => {
+                console.error('Favoriler yüklenemedi:', error);
+                setFavoriteStatus('Favoriler Firebase üzerinden yüklenemedi. Firestore kurallarını kontrol edin.');
+            });
+        };
 
         const loadData = () => {
             const quotesRef = collection(db, 'artifacts', appId, 'public', 'data', 'quotes');
@@ -396,7 +435,7 @@
                     setTimeout(() => { if (appCont) appCont.classList.remove('opacity-0'); }, 50); 
                 }
                 allQuotes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => b.createdAt - a.createdAt);
-                setDailyQuote(); updateCategories(); filterQuotes();
+                setDailyQuote(); updateCategories(); filterQuotes(); updateDailyFavoriteButton();
             }, (err) => console.error(err));
         };
 
@@ -427,22 +466,24 @@
         };
 
         const updateCategories = () => {
-            const cats = ['Tümü', ...new Set(allQuotes.map(q => q.category).filter(Boolean))];
+            const cats = ['Tümü', 'Favoriler', ...new Set(allQuotes.map(q => q.category).filter(Boolean))];
             const filterCont = document.getElementById('category-filters');
             if (!filterCont) return;
             filterCont.innerHTML = cats.map(cat => {
-                const count = cat === 'Tümü' ? allQuotes.length : allQuotes.filter(q => q.category === cat).length;
-                return `<button onclick="setCategory('${cat}')" class="cat-pill ${currentCategory === cat ? 'active' : ''}">${cat} <span class="cat-count">${count}</span></button>`;
+                const count = cat === 'Tümü' ? allQuotes.length : (cat === 'Favoriler' ? favorites.size : allQuotes.filter(q => q.category === cat).length);
+                return `<button data-category="${encodeURIComponent(cat)}" onclick="setCategory(decodeURIComponent(this.dataset.category))" class="cat-pill ${currentCategory === cat ? 'active' : ''}">${cat === 'Favoriler' ? '<i class="fas fa-heart mr-1"></i>' : ''}${escapeHTML(cat)} <span class="cat-count">${count}</span></button>`;
             }).join('');
         };
 
         window.setCategory = (cat) => { currentCategory = cat; updateCategories(); filterQuotes(); };
+        window.handleSearch = () => { clearTimeout(searchTimer); searchTimer = setTimeout(filterQuotes, 250); };
+        const escapeHTML = (v='') => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 
         window.filterQuotes = () => {
             const searchInput = document.getElementById('search-input');
             const search = searchInput ? searchInput.value.toLowerCase() : '';
             filteredQuotes = allQuotes.filter(q => {
-                const matchCat = currentCategory === 'Tümü' || q.category === currentCategory;
+                const matchCat = currentCategory === 'Tümü' || (currentCategory === 'Favoriler' ? favorites.has(q.id) : q.category === currentCategory);
                 const matchSearch = q.text.toLowerCase().includes(search) || (q.author && q.author.toLowerCase().includes(search));
                 return matchCat && matchSearch;
             });
@@ -464,24 +505,24 @@
                     const hasArt = !!q.bgSeed;
                     const bgCss = hasArt ? generateMarbling(q.text, q.category, q.bgSeed) : '';
                     const styleAttr = hasArt ? `style="background-image:${bgCss}"` : '';
-                    const shareArgs = `\`${q.text.replace(/`/g, '\\`').replace(/\n/g, ' ')}\`, \`${(q.author || 'Anonim').replace(/`/g, '\\`')}\``;
                     return `
                     <div class="masonry-item" id="card-${q.id}">
                         <div class="quote-card ${hasArt ? 'quote-card--art' : ''}" ${styleAttr}>
                             ${hasArt ? '<div class="ink-veil"></div>' : ''}
                             <div class="qc-top">
-                                <span class="qc-tag">${q.category || 'Genel'}</span>
+                                <span class="qc-tag">${escapeHTML(q.category || 'Genel')}</span>
                                 <div class="qc-actions">
                                     <button title="Ebru oluştur" onclick="toggleMarblingFor('${q.id}')" class="qc-icon-btn"><i class="fa-solid fa-paintbrush"></i></button>
                                     ${hasArt ? `<button title="Sıfırla" onclick="clearMarblingFor('${q.id}')" class="qc-icon-btn"><i class="fa-solid fa-rotate-left"></i></button>` : ''}
                                 </div>
                             </div>
-                            <p class="qc-text">"${q.text}"</p>
+                            <p class="qc-text">"${escapeHTML(q.text)}"</p>
                             <div class="qc-bottom">
-                                <p class="qc-author">— ${q.author || 'Anonim'}</p>
+                                <p class="qc-author">— ${escapeHTML(q.author || 'Anonim')}</p>
                                 <div class="qc-actions">
-                                    <button onclick="shareQuote(${shareArgs})" class="qc-icon-btn"><i class="fas fa-share-nodes"></i></button>
-                                    <button onclick="downloadImage('${q.id}')" class="qc-icon-btn"><i class="fas fa-download"></i></button>
+                                    <button onclick="toggleFavorite('${q.id}')" title="Favoriye ekle/çıkar" class="qc-icon-btn ${favorites.has(q.id) ? 'favorite-active' : ''}"><i class="${favorites.has(q.id) ? 'fas' : 'far'} fa-heart"></i></button>
+                                    <button onclick="shareQuoteById('${q.id}')" title="Paylaş" class="qc-icon-btn"><i class="fas fa-share-nodes"></i></button>
+                                    <button onclick="generateImageForQuote('${q.id}')" title="Görsel hazırla" class="qc-icon-btn"><i class="fas fa-wand-magic-sparkles"></i></button>
                                     ${isAdminLoggedIn ? `
                                         <button onclick="editQuote('${q.id}')" class="qc-icon-btn"><i class="fas fa-pen"></i></button>
                                         <button onclick="deleteQuote('${q.id}')" class="qc-icon-btn"><i class="fas fa-trash-alt"></i></button>
@@ -498,19 +539,19 @@
                     const hasArt = !!q.bgSeed;
                     const bgCss = hasArt ? generateMarbling(q.text, q.category, q.bgSeed) : '';
                     const styleAttr = hasArt ? `style="background-image:${bgCss}"` : '';
-                    const shareArgs = `\`${q.text.replace(/`/g, '\\`').replace(/\n/g, ' ')}\`, \`${(q.author || 'Anonim').replace(/`/g, '\\`')}\``;
                     return `
                     <div class="swipe-item" ${styleAttr}>
                         ${hasArt ? '<div class="ink-veil"></div>' : ''}
+                        <button onclick="switchView('gallery')" aria-label="Tam ekran görünümünü kapat" class="fixed top-5 right-5 z-[120] w-11 h-11 rounded-full text-white flex items-center justify-center" style="background:rgba(0,0,0,.32); backdrop-filter:blur(8px);"><i class="fas fa-times"></i></button>
                         <div class="text-center max-w-xl relative z-10">
                             <i class="fas fa-quote-left text-6xl mb-10" style="color:rgba(184,144,47,.5);"></i>
-                            <p class="font-display italic text-3xl md:text-5xl text-white leading-tight mb-10 px-4" style="text-shadow:0 2px 12px rgba(0,0,0,.5);">"${q.text}"</p>
-                            <p class="text-lg font-semibold uppercase tracking-widest" style="color:#f2d998;">— ${q.author || 'Anonim'}</p>
+                            <p class="font-display italic text-3xl md:text-5xl text-white leading-tight mb-10 px-4" style="text-shadow:0 2px 12px rgba(0,0,0,.5);">"${escapeHTML(q.text)}"</p>
+                            <p class="text-lg font-semibold uppercase tracking-widest" style="color:#f2d998;">— ${escapeHTML(q.author || 'Anonim')}</p>
                         </div>
                         <div class="absolute bottom-20 flex gap-5 relative z-10">
-                            <button onclick="toggleMarblingFor('${q.id}')" class="w-14 h-14 rounded-full text-white flex items-center justify-center border border-white/10" style="background:rgba(255,255,255,.08);"><i class="fa-solid fa-paintbrush"></i></button>
-                            <button onclick="shareQuote(${shareArgs})" class="w-14 h-14 rounded-full text-white flex items-center justify-center border border-white/10" style="background:rgba(255,255,255,.08);"><i class="fas fa-share-alt"></i></button>
-                            <button onclick="switchView('gallery')" class="w-14 h-14 rounded-full text-white flex items-center justify-center border border-white/10" style="background:rgba(255,255,255,.08);"><i class="fas fa-th-large"></i></button>
+                            <button onclick="toggleFavorite('${q.id}')" class="w-14 h-14 rounded-full text-white flex items-center justify-center border border-white/10" style="background:${favorites.has(q.id) ? 'rgba(159,18,57,.85)' : 'rgba(255,255,255,.08)'};"><i class="${favorites.has(q.id) ? 'fas' : 'far'} fa-heart"></i></button>
+                            <button onclick="shareQuoteById('${q.id}')" class="w-14 h-14 rounded-full text-white flex items-center justify-center border border-white/10" style="background:rgba(255,255,255,.08);"><i class="fas fa-share-alt"></i></button>
+                            <button onclick="generateImageForQuote('${q.id}')" class="w-14 h-14 rounded-full text-white flex items-center justify-center border border-white/10" style="background:rgba(255,255,255,.08);"><i class="fas fa-wand-magic-sparkles"></i></button>
                         </div>
                     </div>`;
                 }).join('');
@@ -535,27 +576,49 @@
             document.body.style.overflow = (v === 'swipe') ? 'hidden' : 'auto';
         };
 
-        window.shareQuote = async (text, author) => {
-            const shareData = { title: 'İlham', text: `"${text}"\n— ${author}` };
+        const copyText = async (text) => {
             try {
-                if (navigator.share) await navigator.share(shareData);
-                else { 
-                    const temp = document.createElement("textarea"); 
-                    temp.value = shareData.text; 
-                    document.body.appendChild(temp); 
-                    temp.select(); 
-                    document.execCommand("copy"); 
-                    document.body.removeChild(temp); 
-                    showUIModal('alert', 'Kopyalandı', 'Söz panoya kopyalandı.'); 
-                }
-            } catch (e) {}
+                if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+                else { const t=document.createElement('textarea'); t.value=text; t.style.position='fixed'; t.style.opacity='0'; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); }
+                showUIModal('alert','Kopyalandı','Söz panoya kopyalandı.');
+            } catch(e) { showUIModal('alert','Paylaşım',escapeHTML(text).replace(/\n/g,'<br>')); }
         };
+        window.shareQuote = async (text, author) => {
+            const value = `"${text}"\n— ${author || 'Anonim'}`;
+            try {
+                if (navigator.share && window.isSecureContext) { await navigator.share({title:'Söz Kütüphanesi', text:value}); return; }
+                await copyText(value);
+            } catch(e) { if (e?.name !== 'AbortError') await copyText(value); }
+        };
+        window.shareQuoteById = id => { const q=allQuotes.find(x=>x.id===id); if(q) shareQuote(q.text,q.author); };
+        window.shareDaily = () => shareQuoteById(window.dailyQuoteId);
+        const updateDailyFavoriteButton = () => {
+            const b=document.getElementById('daily-favorite-btn'); if(!b || !window.dailyQuoteId) return;
+            const active=favorites.has(window.dailyQuoteId); b.innerHTML=`<i class="${active?'fas':'far'} fa-heart"></i>`; b.style.background=active?'rgba(159,18,57,.9)':'rgba(255,255,255,.1)';
+        };
+        window.toggleFavorite = async (id) => {
+            if (!id) return;
+            const favoriteRef = doc(db, 'artifacts', appId, 'public', 'data', 'favorites', id);
+            const isFavorite = favorites.has(id);
 
-        window.shareDaily = () => { 
-            const txtEl = document.getElementById('daily-text');
-            const authEl = document.getElementById('daily-author');
-            if (txtEl && authEl) {
-                shareQuote(txtEl.innerText.replace(/"/g, ''), authEl.innerText.replace('— ', '')); 
+            try {
+                setFavoriteStatus(isFavorite ? 'Favoriden çıkarılıyor...' : 'Favorilere ekleniyor...');
+                if (isFavorite) {
+                    await deleteDoc(favoriteRef);
+                } else {
+                    const quote = allQuotes.find(item => item.id === id);
+                    await setDoc(favoriteRef, {
+                        quoteId: id,
+                        text: quote?.text || '',
+                        author: quote?.author || 'Anonim',
+                        category: quote?.category || 'Genel',
+                        createdAt: Date.now()
+                    });
+                }
+            } catch (error) {
+                console.error('Favori işlemi başarısız:', error);
+                setFavoriteStatus('Favori kaydedilemedi. Firestore yazma izinlerini kontrol edin.');
+                showUIModal('alert', 'Favori Kaydedilemedi', 'Firebase bağlantısı veya Firestore güvenlik kuralları nedeniyle işlem tamamlanamadı.');
             }
         };
 
@@ -827,7 +890,9 @@
             });
         };
 
+        document.addEventListener('keydown',e=>{if(e.key==='Escape'&&currentView==='swipe')switchView('gallery');});
         initAuth();
+        switchView('gallery');
     </script>
 </body>
 </html>
