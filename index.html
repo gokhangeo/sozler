@@ -88,11 +88,6 @@
         }
         .quote-card:hover{ transform: translateY(-4px); box-shadow: 0 24px 48px -20px rgba(33,28,23,.18); }
 
-        .qc-tag{
-            display:inline-block; padding:.35rem 1rem; border-radius:999px; font-size:9px;
-            font-weight:800; text-transform:uppercase; letter-spacing:.14em;
-            background: rgba(159,18,57,.08); color:var(--cherry);
-        }
         .qc-text{ font-family:'Fraunces', serif; font-style:italic; font-size:1.35rem; line-height:1.5; color:var(--ink); margin:1.5rem 0 2rem; position:relative; z-index:1; }
         .qc-author{ font-size:10px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); }
         .qc-top, .qc-bottom{ position:relative; z-index:1; display:flex; justify-content:space-between; align-items:center; }
@@ -156,7 +151,7 @@
                 <input type="text" id="search-input" oninput="handleSearch()" placeholder="Sözlerde ara..." class="w-full py-3 bg-transparent outline-none text-sm">
             </div>
 
-            <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" id="category-filters"></div>
+            <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" id="library-filters"></div>
         </div>
 
         <!-- Günün Sözü -->
@@ -201,10 +196,7 @@
                     <div id="edit-title" class="text-xs font-black uppercase tracking-widest" style="color:var(--ink-faint);">Söz İşlemleri</div>
                     <input type="hidden" id="edit-id">
                     <textarea id="quote-text" rows="3" class="w-full p-5 rounded-2xl border outline-none text-sm transition-all" style="border-color:var(--paper-edge); background:var(--paper);" placeholder="Sözü buraya yazın..."></textarea>
-                    <div class="flex gap-3">
-                        <input type="text" id="quote-author" class="flex-1 p-3.5 rounded-xl border text-sm outline-none" style="border-color:var(--paper-edge); background:var(--paper);" placeholder="Yazar">
-                        <input type="text" id="quote-category" class="flex-1 p-3.5 rounded-xl border text-sm outline-none" style="border-color:var(--paper-edge); background:var(--paper);" placeholder="Kategori">
-                    </div>
+                    <input type="text" id="quote-author" class="w-full p-3.5 rounded-xl border text-sm outline-none" style="border-color:var(--paper-edge); background:var(--paper);" placeholder="Yazar">
                     <div class="flex gap-2">
                         <button onclick="saveQuote()" id="save-btn" class="flex-1 btn-primary py-4 rounded-xl font-bold transition-all">Sözü Kaydet</button>
                         <button onclick="resetAdminForm()" class="px-5 rounded-xl" style="background:var(--paper); color:var(--ink-faint);"><i class="fas fa-rotate-left"></i></button>
@@ -274,7 +266,7 @@
         const db = getFirestore(app);
 
         let currentUser = null, allQuotes = [], filteredQuotes = [], isAdminLoggedIn = false;
-        let headerClickCount = 0, headerClickTimer = null, currentCategory = 'Tümü', currentView = 'gallery';
+        let headerClickCount = 0, headerClickTimer = null, currentFilter = 'Tümü', currentView = 'gallery';
         let favorites = new Set();
         let searchTimer = null, favoritesUnsubscribe = null;
         window.dailyQuoteId = null;
@@ -353,7 +345,7 @@
             const favoritesRef = collection(db, 'artifacts', appId, 'public', 'data', 'favorites');
             favoritesUnsubscribe = onSnapshot(favoritesRef, (snapshot) => {
                 favorites = new Set(snapshot.docs.map(item => item.id));
-                updateCategories();
+                updateLibraryFilters();
                 filterQuotes();
                 updateDailyFavoriteButton();
                 setFavoriteStatus(`${favorites.size} favori Firebase ile eşitlendi.`);
@@ -377,7 +369,7 @@
                     setTimeout(() => { if (appCont) appCont.classList.remove('opacity-0'); }, 50); 
                 }
                 allQuotes = snapshot.docs.map(doc => { const data = doc.data(); return { id: doc.id, ...data, text: normalizeQuoteText(data.text || '') }; }).sort((a, b) => b.createdAt - a.createdAt);
-                setDailyQuote(); updateCategories(); filterQuotes(); updateDailyFavoriteButton();
+                setDailyQuote(); updateLibraryFilters(); filterQuotes(); updateDailyFavoriteButton();
             }, (err) => console.error(err));
         };
 
@@ -402,17 +394,19 @@
             }
         };
 
-        const updateCategories = () => {
-            const cats = ['Tümü', 'Favoriler', ...new Set(allQuotes.map(q => q.category).filter(Boolean))];
-            const filterCont = document.getElementById('category-filters');
+        const updateLibraryFilters = () => {
+            const filterCont = document.getElementById('library-filters');
             if (!filterCont) return;
-            filterCont.innerHTML = cats.map(cat => {
-                const count = cat === 'Tümü' ? allQuotes.length : (cat === 'Favoriler' ? favorites.size : allQuotes.filter(q => q.category === cat).length);
-                return `<button data-category="${encodeURIComponent(cat)}" onclick="setCategory(decodeURIComponent(this.dataset.category))" class="cat-pill ${currentCategory === cat ? 'active' : ''}">${cat === 'Favoriler' ? '<i class="fas fa-heart mr-1"></i>' : ''}${escapeHTML(cat)} <span class="cat-count">${count}</span></button>`;
-            }).join('');
+            const filters = [
+                { key: 'Tümü', label: 'Tüm Sözler', count: allQuotes.length, icon: 'fa-book-open' },
+                { key: 'Favoriler', label: 'Favoriler', count: favorites.size, icon: 'fa-heart' }
+            ];
+            filterCont.innerHTML = filters.map(item =>
+                `<button onclick="setLibraryFilter('${item.key}')" class="cat-pill ${currentFilter === item.key ? 'active' : ''}"><i class="fas ${item.icon} mr-1"></i>${item.label} <span class="cat-count">${item.count}</span></button>`
+            ).join('');
         };
 
-        window.setCategory = (cat) => { currentCategory = cat; updateCategories(); filterQuotes(); };
+        window.setLibraryFilter = (filter) => { currentFilter = filter; updateLibraryFilters(); filterQuotes(); };
         window.handleSearch = () => { clearTimeout(searchTimer); searchTimer = setTimeout(filterQuotes, 250); };
         const escapeHTML = (v='') => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 
@@ -420,9 +414,9 @@
             const searchInput = document.getElementById('search-input');
             const search = searchInput ? searchInput.value.toLowerCase() : '';
             filteredQuotes = allQuotes.filter(q => {
-                const matchCat = currentCategory === 'Tümü' || (currentCategory === 'Favoriler' ? favorites.has(q.id) : q.category === currentCategory);
+                const matchFilter = currentFilter === 'Tümü' || favorites.has(q.id);
                 const matchSearch = q.text.toLowerCase().includes(search) || (q.author && q.author.toLowerCase().includes(search));
-                return matchCat && matchSearch;
+                return matchFilter && matchSearch;
             });
             renderUI();
         };
@@ -442,9 +436,6 @@
                     return `
                     <div class="masonry-item" id="card-${q.id}">
                         <div class="quote-card">
-                            <div class="qc-top">
-                                <span class="qc-tag">${escapeHTML(q.category || 'Genel')}</span>
-                            </div>
                             <p class="qc-text">“${escapeHTML(normalizeQuoteText(q.text))}”</p>
                             <div class="qc-bottom">
                                 <p class="qc-author">— ${escapeHTML(q.author || 'Anonim')}</p>
@@ -561,7 +552,6 @@
                         quoteId: id,
                         text: quote?.text || '',
                         author: quote?.author || 'Anonim',
-                        category: quote?.category || 'Genel',
                         createdAt: Date.now()
                     });
                 }
@@ -599,15 +589,6 @@
             const dash = document.getElementById('admin-dashboard');
             if (dash) dash.classList.add('hidden'); 
             renderUI(); 
-        };
-
-        const autoCat = (t) => {
-            const l = t.toLowerCase();
-            if (l.match(/aşk|sevgi|kalp|özlem/)) return 'Aşk';
-            if (l.match(/başarı|hedef|çalış|kazan|asla|pes/)) return 'Motivasyon';
-            if (l.match(/zaman|hayat|insan|gerçek|dünya|yaşam/)) return 'Felsefe';
-            if (l.match(/komik|gül|eğlence|it|eşek/)) return 'Mizah';
-            return 'Genel';
         };
 
         const parseQuoteLine = (line) => {
@@ -652,13 +633,11 @@
         window.saveQuote = async () => {
             const rawTextEl = document.getElementById('quote-text');
             const authEl = document.getElementById('quote-author');
-            const catEl = document.getElementById('quote-category');
             const editIdEl = document.getElementById('edit-id');
 
             const rawText = rawTextEl ? rawTextEl.value.trim() : '';
             let { text, author } = parseQuoteLine(rawText);
             const overrideAuthor = authEl ? authEl.value.trim() : '';
-            const catStr = catEl && catEl.value.trim() ? catEl.value.trim() : autoCat(text);
             const editId = editIdEl ? editIdEl.value : '';
 
             if (!text) return showUIModal('alert', 'Uyarı', 'Söz içeriği boş bırakılamaz.');
@@ -666,9 +645,9 @@
             try {
                 const finalAuthor = overrideAuthor || author;
                 if (editId) { 
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'quotes', editId), { text, author: finalAuthor, category: catStr }); 
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'quotes', editId), { text, author: finalAuthor }); 
                 } else { 
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'quotes'), { text, author: finalAuthor, category: catStr, createdAt: Date.now() }); 
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'quotes'), { text, author: finalAuthor, createdAt: Date.now() }); 
                 }
                 resetAdminForm(); 
                 showUIModal('alert', 'Başarılı', 'İşlem tamamlandı.');
@@ -683,14 +662,12 @@
             
             const txtEl = document.getElementById('quote-text');
             const authEl = document.getElementById('quote-author');
-            const catEl = document.getElementById('quote-category');
             const idEl = document.getElementById('edit-id');
             const titleEl = document.getElementById('edit-title');
             const btnEl = document.getElementById('save-btn');
             
             if (txtEl) txtEl.value = q.text; 
             if (authEl) authEl.value = q.author || ''; 
-            if (catEl) catEl.value = q.category || '';
             if (idEl) idEl.value = id; 
             if (titleEl) titleEl.innerText = "Düzenle"; 
             if (btnEl) btnEl.innerText = "Güncelle"; 
@@ -701,14 +678,12 @@
         window.resetAdminForm = () => {
             const txtEl = document.getElementById('quote-text');
             const authEl = document.getElementById('quote-author');
-            const catEl = document.getElementById('quote-category');
             const idEl = document.getElementById('edit-id');
             const titleEl = document.getElementById('edit-title');
             const btnEl = document.getElementById('save-btn');
             
             if (txtEl) txtEl.value = ''; 
             if (authEl) authEl.value = ''; 
-            if (catEl) catEl.value = ''; 
             if (idEl) idEl.value = '';
             if (titleEl) titleEl.innerText = "Yeni Söz Ekle"; 
             if (btnEl) btnEl.innerText = "Sözü Kaydet";
@@ -728,7 +703,7 @@
             try {
                 for (let i = 0; i < lines.length; i++) {
                     const { text, author } = parseQuoteLine(lines[i]);
-                    await addDoc(qRef, { text, author, category: autoCat(text), createdAt: Date.now() + i });
+                    await addDoc(qRef, { text, author, createdAt: Date.now() + i });
                 }
                 if (bulkInput) bulkInput.value = '';
                 if (loader) loader.classList.add('hidden');
