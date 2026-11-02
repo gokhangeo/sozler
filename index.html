@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#f6f1e7">
 <title>Söz Kütüphanesi</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sözler">
+<meta name="description" content="Günün sözü, favoriler ve paylaşılabilir söz kartları.">
 <script>
 (() => { let t = null; try { t = localStorage.getItem('soz-theme'); } catch (e) {}
   if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -161,6 +169,26 @@ input,textarea{font:inherit;color:var(--ink)}
 #ui-modal-input{width:100%;padding:1rem;border-radius:14px;border:1px solid var(--line);background:var(--bg);text-align:center;letter-spacing:.5em;font-size:1.4rem;font-weight:600;outline:0;margin-bottom:1.5rem}
 .modal-actions{display:flex;justify-content:flex-end;gap:.5rem}
 
+/* görsel kart */
+.img-modal .modal-card{max-width:420px;padding:1.25rem}
+.img-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.img-head h3{font-family:var(--serif);font-weight:500;font-size:1.2rem}
+.img-stage{display:flex;justify-content:center;align-items:center;background:var(--bg);border-radius:16px;padding:1rem;min-height:300px}
+.img-stage img{max-width:100%;max-height:52vh;border-radius:10px;box-shadow:0 18px 40px -16px rgba(0,0,0,.5)}
+.img-stage .spin{font-family:var(--serif);font-size:3rem;color:var(--accent);animation:breathe 1.2s infinite}
+.chips{display:flex;gap:.4rem;flex-wrap:wrap;margin:1rem 0 .4rem}
+.chip{padding:.45rem .85rem;border-radius:999px;border:1px solid var(--line);font-size:.78rem;font-weight:600;color:var(--ink-2)}
+.chip.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.swatches{display:flex;gap:.5rem;margin:.6rem 0 1rem}
+.swatch{width:30px;height:30px;border-radius:999px;border:2px solid transparent;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)}
+.swatch.active{border-color:var(--accent)}
+.img-actions{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.img-hint{font-size:.72rem;color:var(--ink-3);text-align:center;margin-top:.7rem}
+.install-tip{position:fixed;left:1rem;right:1rem;bottom:calc(1rem + env(safe-area-inset-bottom));z-index:90;max-width:460px;margin:0 auto;display:flex;align-items:center;gap:.8rem;padding:.9rem 1rem;background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 20px 50px -18px rgba(0,0,0,.45);animation:rise .4s ease both}
+.install-tip img{width:42px;height:42px;border-radius:11px}
+.install-tip p{flex:1;font-size:.82rem;line-height:1.4;color:var(--ink-2)}
+.install-tip b{color:var(--ink)}
+
 @media(max-width:640px){
   .wrap{padding:0 1rem}
   .bar-row{flex-wrap:wrap;gap:.6rem}
@@ -214,6 +242,7 @@ input,textarea{font:inherit;color:var(--ink)}
         <div class="daily-actions">
           <button id="daily-favorite-btn" onclick="toggleFavorite(dailyQuoteId)" class="round-btn" title="Favori"><i class="far fa-heart"></i></button>
           <button onclick="copyQuoteById(dailyQuoteId)" class="round-btn" title="Kopyala"><i class="far fa-copy"></i></button>
+          <button onclick="openImageModal(dailyQuoteId)" class="round-btn" title="Görsel"><i class="far fa-image"></i></button>
           <button onclick="shareDaily()" class="round-btn" title="Paylaş"><i class="fas fa-arrow-up-from-bracket"></i></button>
         </div>
       </div>
@@ -265,6 +294,31 @@ input,textarea{font:inherit;color:var(--ink)}
   </main>
 </div>
 
+<div id="img-modal" class="modal img-modal hidden" onclick="if(event.target===this)closeImageModal()">
+  <div class="modal-card">
+    <div class="img-head"><h3>Söz kartı</h3><button class="icon-btn" onclick="closeImageModal()" aria-label="Kapat"><i class="fas fa-xmark"></i></button></div>
+    <div class="img-stage" id="img-stage"><span class="spin">“</span></div>
+    <div class="chips" id="img-formats">
+      <button class="chip active" data-f="story" onclick="setImageFormat('story')">Hikaye 9:16</button>
+      <button class="chip" data-f="square" onclick="setImageFormat('square')">Kare 1:1</button>
+      <button class="chip" data-f="post" onclick="setImageFormat('post')">Gönderi 4:5</button>
+    </div>
+    <div class="swatches" id="img-themes"></div>
+    <div class="img-actions">
+      <button class="btn btn-soft" onclick="downloadImage()"><i class="fas fa-download"></i> İndir</button>
+      <button class="btn btn-primary" onclick="shareImage()"><i class="fas fa-arrow-up-from-bracket"></i> Paylaş</button>
+    </div>
+    <p class="img-hint" id="img-hint">Paylaş ile Instagram, WhatsApp ya da Fotoğraflar'a gönderebilirsin.</p>
+  </div>
+</div>
+
+<div id="install-tip" class="install-tip hidden">
+  <img src="icons/apple-touch-icon.png" alt="">
+  <p id="install-text"><b>Ana ekrana ekle:</b> Paylaş <i class="fas fa-arrow-up-from-bracket"></i> menüsünden “Ana Ekrana Ekle”ye dokun.</p>
+  <button id="install-btn" class="btn btn-primary hidden" style="padding:.6rem .9rem">Yükle</button>
+  <button class="icon-btn" onclick="dismissInstall()" aria-label="Kapat"><i class="fas fa-xmark"></i></button>
+</div>
+
 <div id="ui-modal" class="modal hidden">
   <div class="modal-card">
     <h3 id="ui-modal-title">Başlık</h3>
@@ -281,7 +335,7 @@ input,textarea{font:inherit;color:var(--ink)}
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot, updateDoc, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, addDoc, doc, deleteDoc, onSnapshot, updateDoc, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCVbPr8GHUqx5nWtVlv_QVep5Or8vvLTGk",
@@ -296,7 +350,9 @@ input,textarea{font:inherit;color:var(--ink)}
         const appId = 'sabit-soz-kutuphanesi';
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
+        let db;
+        try { db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
+        catch (e) { db = initializeFirestore(app, {}); }
 
         let currentUser = null, allQuotes = [], filteredQuotes = [], isAdminLoggedIn = false;
         let headerClickCount = 0, headerClickTimer = null, currentFilter = 'Tümü', currentView = 'gallery';
@@ -363,10 +419,12 @@ input,textarea{font:inherit;color:var(--ink)}
 
         const initAuth = async () => {
             try { await signInAnonymously(auth); }
-            catch (e) { const loader = document.getElementById('loading-screen'); if (loader) loader.innerHTML = `<p class='load-error'>Bağlantı hatası: ${e.message}</p>`; }
+            catch (e) { if (!navigator.onLine || auth.currentUser) { startData(); return; } const loader = document.getElementById('loading-screen'); if (loader) loader.innerHTML = `<p class='load-error'>Bağlantı hatası: ${e.message}</p>`; }
         };
 
-        onAuthStateChanged(auth, (user) => { if (user) { currentUser = user; loadData(); loadFavorites(); } });
+        let dataStarted = false;
+        const startData = () => { if (dataStarted) return; dataStarted = true; loadData(); loadFavorites(); };
+        onAuthStateChanged(auth, (user) => { if (user) { currentUser = user; startData(); } });
 
         const setFavoriteStatus = (text) => {
             const el = document.getElementById('firebase-favorite-status');
@@ -484,6 +542,7 @@ input,textarea{font:inherit;color:var(--ink)}
                                 <div class="qc-actions">
                                     <button onclick="toggleFavorite('${q.id}')" title="Favori" aria-label="Favori" class="icon-btn ${fav ? 'is-fav' : ''}"><i class="${fav ? 'fas' : 'far'} fa-heart"></i></button>
                                     <button onclick="copyQuoteById('${q.id}')" title="Kopyala" aria-label="Kopyala" class="icon-btn"><i class="far fa-copy"></i></button>
+                                    <button onclick="openImageModal('${q.id}')" title="Görsel olarak paylaş" aria-label="Görsel" class="icon-btn"><i class="far fa-image"></i></button>
                                     <button onclick="shareQuoteById('${q.id}')" title="Paylaş" aria-label="Paylaş" class="icon-btn"><i class="fas fa-arrow-up-from-bracket"></i></button>
                                     ${isAdminLoggedIn ? `
                                         <button onclick="editQuote('${q.id}')" title="Düzenle" class="icon-btn"><i class="fas fa-pen"></i></button>
@@ -512,6 +571,7 @@ input,textarea{font:inherit;color:var(--ink)}
                         <div class="swipe-actions">
                             <button onclick="toggleFavorite('${q.id}')" aria-label="Favori" class="round-btn ${fav ? 'is-fav' : ''}"><i class="${fav ? 'fas' : 'far'} fa-heart"></i></button>
                             <button onclick="copyQuoteById('${q.id}')" aria-label="Kopyala" class="round-btn"><i class="far fa-copy"></i></button>
+                            <button onclick="openImageModal('${q.id}')" aria-label="Görsel" class="round-btn"><i class="far fa-image"></i></button>
                             <button onclick="shareQuoteById('${q.id}')" aria-label="Paylaş" class="round-btn"><i class="fas fa-arrow-up-from-bracket"></i></button>
                         </div>
                         <span class="swipe-count">${idx + 1} / ${filteredQuotes.length}</span>
@@ -800,6 +860,138 @@ input,textarea{font:inherit;color:var(--ink)}
 
         window.addEventListener('scroll', () => document.getElementById('topbar')?.classList.toggle('scrolled', window.scrollY > 8), { passive: true });
         document.getElementById('ui-modal-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('ui-modal-confirm')?.click(); });
+
+        // ---------- Söz kartı görseli (Canvas, yapay zeka yok) ----------
+        const IMG_FORMATS = { story: [1080, 1920], square: [1080, 1080], post: [1080, 1350] };
+        const IMG_THEMES = [
+            { key: 'ember', bg: ['#1b1511', '#9c4228', '#2b1a12'], text: '#f6efe3', accent: '#f0c98a', sw: 'linear-gradient(135deg,#9c4228,#1b1511)' },
+            { key: 'paper', bg: ['#f6f1e7', '#efe2c9', '#f6f1e7'], text: '#1f1a15', accent: '#b04a2e', sw: 'linear-gradient(135deg,#f6f1e7,#e6d3ae)' },
+            { key: 'night', bg: ['#0e1424', '#2c3d6b', '#0e1424'], text: '#eef1fa', accent: '#b9c8ff', sw: 'linear-gradient(135deg,#2c3d6b,#0e1424)' },
+            { key: 'forest', bg: ['#0f1a15', '#2f5a45', '#0f1a15'], text: '#eef5ef', accent: '#cfe3a8', sw: 'linear-gradient(135deg,#2f5a45,#0f1a15)' },
+            { key: 'rose', bg: ['#2a1220', '#9a3b5f', '#2a1220'], text: '#fbeef3', accent: '#ffc7d9', sw: 'linear-gradient(135deg,#9a3b5f,#2a1220)' }
+        ];
+        let imgState = { id: null, format: 'story', theme: 0, blob: null, url: null };
+
+        const wrapLines = (ctx, text, maxW) => {
+            const words = text.split(/\s+/); const lines = []; let line = '';
+            for (const w of words) {
+                const test = line ? line + ' ' + w : w;
+                if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test;
+            }
+            if (line) lines.push(line);
+            return lines;
+        };
+
+        const drawQuoteImage = async (q, format, themeIdx) => {
+            const [W, H] = IMG_FORMATS[format]; const th = IMG_THEMES[themeIdx];
+            try { await Promise.all([document.fonts.load('italic 400 60px Fraunces'), document.fonts.load('400 60px Fraunces'), document.fonts.load('600 30px Inter')]); } catch (e) {}
+            const c = document.createElement('canvas'); c.width = W; c.height = H; const ctx = c.getContext('2d');
+            // arka plan
+            ctx.fillStyle = th.bg[0]; ctx.fillRect(0, 0, W, H);
+            let g = ctx.createRadialGradient(W * 0.15, H * 0.1, 0, W * 0.15, H * 0.1, Math.max(W, H) * 0.75);
+            g.addColorStop(0, th.bg[1]); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+            g = ctx.createRadialGradient(W, H, 0, W, H, Math.max(W, H) * 0.6);
+            g.addColorStop(0, th.bg[1] + '88'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+            // hafif doku
+            ctx.globalAlpha = 0.035; ctx.fillStyle = th.text;
+            for (let i = 0; i < 2600; i++) ctx.fillRect(Math.random() * W, Math.random() * H, 2, 2);
+            ctx.globalAlpha = 1;
+
+            const pad = 110, maxW = W - pad * 2;
+            const text = normalizeQuoteText(q.text); const author = q.author || 'Anonim';
+            // yazı boyutunu sığacak şekilde ayarla
+            const maxTextH = H * (format === 'story' ? 0.52 : 0.5);
+            let size = format === 'story' ? 86 : 74, lines, lh;
+            do {
+                ctx.font = `italic 400 ${size}px Fraunces, Georgia, serif`;
+                lines = wrapLines(ctx, text, maxW); lh = size * 1.28; size -= 3;
+            } while (lines.length * lh > maxTextH && size > 30);
+            const blockH = lines.length * lh;
+            const markSize = Math.min(260, size * 3.2);
+            const totalH = markSize * 0.55 + 50 + blockH + 70 + 40;
+            let y = (H - totalH) / 2 - (format === 'story' ? 40 : 10);
+
+            ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+            ctx.fillStyle = th.accent; ctx.globalAlpha = 0.9;
+            ctx.font = `400 ${markSize}px Fraunces, Georgia, serif`;
+            ctx.fillText('“', W / 2, y + markSize * 0.72); ctx.globalAlpha = 1;
+            y += markSize * 0.55 + 50;
+
+            ctx.fillStyle = th.text; ctx.font = `italic 400 ${size + 3}px Fraunces, Georgia, serif`;
+            lines.forEach((ln, i) => ctx.fillText(ln, W / 2, y + lh * (i + 0.8)));
+            y += blockH + 70;
+
+            ctx.fillStyle = th.accent; ctx.fillRect(W / 2 - 30, y - 8, 60, 3);
+            ctx.font = '600 30px Inter, system-ui, sans-serif';
+            ctx.letterSpacing = '6px';
+            ctx.fillText(author.toLocaleUpperCase('tr'), W / 2, y + 48);
+            ctx.letterSpacing = '4px';
+            ctx.globalAlpha = 0.45; ctx.fillStyle = th.text; ctx.font = '500 22px Inter, system-ui, sans-serif';
+            ctx.fillText('SÖZ KÜTÜPHANESİ', W / 2, H - (format === 'story' ? 150 : 70));
+            ctx.globalAlpha = 1; ctx.letterSpacing = '0px';
+            return new Promise(res => c.toBlob(res, 'image/png'));
+        };
+
+        const renderImagePreview = async () => {
+            const q = allQuotes.find(x => x.id === imgState.id); if (!q) return;
+            const stage = document.getElementById('img-stage');
+            stage.innerHTML = '<span class="spin">“</span>';
+            const blob = await drawQuoteImage(q, imgState.format, imgState.theme);
+            if (imgState.url) URL.revokeObjectURL(imgState.url);
+            imgState.blob = blob; imgState.url = URL.createObjectURL(blob);
+            stage.innerHTML = `<img src="${imgState.url}" alt="Söz kartı">`;
+        };
+
+        const renderImageControls = () => {
+            document.querySelectorAll('#img-formats .chip').forEach(b => b.classList.toggle('active', b.dataset.f === imgState.format));
+            document.getElementById('img-themes').innerHTML = IMG_THEMES.map((t, i) =>
+                `<button class="swatch ${i === imgState.theme ? 'active' : ''}" style="background:${t.sw}" onclick="setImageTheme(${i})" aria-label="Tema ${i + 1}"></button>`).join('');
+        };
+
+        window.openImageModal = (id) => {
+            if (!id) return;
+            imgState.id = id;
+            renderImageControls();
+            document.getElementById('img-modal').classList.remove('hidden');
+            renderImagePreview();
+        };
+        window.closeImageModal = () => document.getElementById('img-modal').classList.add('hidden');
+        window.setImageFormat = (f) => { imgState.format = f; renderImageControls(); renderImagePreview(); };
+        window.setImageTheme = (i) => { imgState.theme = i; renderImageControls(); renderImagePreview(); };
+        const imgFileName = () => `soz-${imgState.format}-${Date.now()}.png`;
+        window.downloadImage = () => {
+            if (!imgState.url) return;
+            const a = document.createElement('a'); a.href = imgState.url; a.download = imgFileName(); document.body.appendChild(a); a.click(); a.remove();
+            const hint = document.getElementById('img-hint');
+            if (hint && /iPhone|iPad/.test(navigator.userAgent)) hint.textContent = 'İndirme açılmazsa resme basılı tutup “Fotoğraflara Ekle”yi seç.';
+        };
+        window.shareImage = async () => {
+            if (!imgState.blob) return;
+            const file = new File([imgState.blob], imgFileName(), { type: 'image/png' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try { await navigator.share({ files: [file], title: 'Söz Kütüphanesi' }); } catch (e) { if (e?.name !== 'AbortError') downloadImage(); }
+            } else downloadImage();
+        };
+
+        // ---------- PWA ----------
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+        }
+        const isStandalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+        let deferredPrompt = null;
+        const installDismissed = () => { try { return localStorage.getItem('soz-install-dismissed') === '1'; } catch (e) { return false; } };
+        window.dismissInstall = () => { document.getElementById('install-tip').classList.add('hidden'); try { localStorage.setItem('soz-install-dismissed', '1'); } catch (e) {} };
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); deferredPrompt = e;
+            if (isStandalone || installDismissed()) return;
+            document.getElementById('install-text').innerHTML = '<b>Uygulama olarak yükle</b> — ana ekrandan aç, internetsiz de çalışsın.';
+            const btn = document.getElementById('install-btn'); btn.classList.remove('hidden');
+            btn.onclick = async () => { deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; dismissInstall(); };
+            document.getElementById('install-tip').classList.remove('hidden');
+        });
+        if (!isStandalone && !installDismissed() && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+            setTimeout(() => document.getElementById('install-tip').classList.remove('hidden'), 4000);
+        }
 </script>
 </body>
 </html>
